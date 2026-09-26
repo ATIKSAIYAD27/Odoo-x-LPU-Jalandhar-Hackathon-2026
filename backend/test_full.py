@@ -33,7 +33,7 @@ with app.app_context(), app.test_client() as c:
     check("Seed created stock rows", Stock.query.count() >= 8, f"got {Stock.query.count()}")
     check("Seed created a draft receipt", Receipt.query.filter_by(status="Draft").count() >= 1)
     check("Seed created a ready receipt", Receipt.query.filter_by(status="Ready").count() >= 1)
-    check("Seed created a waiting delivery", DeliveryOrder.query.filter_by(status="Waiting").count() >= 1)
+    check("Seed created a picking delivery", DeliveryOrder.query.filter_by(status="Picking").count() >= 1)
     check("Seed created a transfer", InternalTransfer.query.count() >= 1)
     check("Seed created an adjustment", StockAdjustment.query.count() >= 1)
     check("Seed wrote ledger entries", StockLedger.query.count() >= 8, f"got {StockLedger.query.count()}")
@@ -85,7 +85,9 @@ with app.app_context(), app.test_client() as c:
     check("KPI pending_deliveries counted", kpis["pending_deliveries"] >= 2, f"got {kpis['pending_deliveries']}")
     check("KPI transfers counted", kpis["transfers_scheduled"] >= 1, f"got {kpis['transfers_scheduled']}")
 
-    # ---------- Categories ----------
+    # ---------- Categories (Inventory Manager required) ----------
+    c.get("/logout", follow_redirects=True)
+    c.post("/login", data={"email": "manager@stocksense.io", "password": "manager123"})
     r = c.get("/categories")
     check("Category list renders", r.status_code == 200 and b"Categories" in r.data)
     r = c.post("/categories/add", data={"name": "Test Cat"}, follow_redirects=True)
@@ -150,6 +152,20 @@ with app.app_context(), app.test_client() as c:
     ref_prod = Product.query.filter(StockLedger.query.filter(StockLedger.product_id == Product.id).exists()).first()
     r = c.get(f"/products/delete/{ref_prod.id}", follow_redirects=True)
     check("Delete referenced product blocked", b"Cannot delete" in r.data)
+
+    # ---------- Role-based access (Warehouse Staff restrictions) ----------
+    c.get("/logout", follow_redirects=True)
+    c.post("/login", data={"email": "new@x.com", "password": "newpass456"})
+    r = c.get("/products/add", follow_redirects=True)
+    check("Staff blocked from creating product", b"Inventory Manager" in r.data)
+    r = c.post("/categories/add", data={"name": "Staff Cat"}, follow_redirects=True)
+    check("Staff blocked from creating category", b"Inventory Manager" in r.data)
+    check("Staff category not created", Category.query.filter_by(name="Staff Cat").first() is None)
+    r = c.post("/warehouses/add", data={"name": "Staff WH"}, follow_redirects=True)
+    check("Staff blocked from adding warehouse", b"Inventory Manager" in r.data)
+    check("Staff warehouse not created", Warehouse.query.filter_by(name="Staff WH").first() is None)
+    r = c.get("/products")
+    check("Staff can still view products", r.status_code == 200 and b"Wireless Mouse" in r.data)
 
     # ---------- Receipts ----------
     r = c.get("/receipts")
@@ -226,7 +242,14 @@ with app.app_context(), app.test_client() as c:
     good_d = DeliveryOrder.query.filter_by(customer="Good Cust").first()
     check("Delivery has 1 line", good_d and len(good_d.lines) == 1)
 
-    # Validate delivery (should work - we have stock)
+    # Validate delivery — must be picked and packed first (Pick -> Pack -> Validate)
+    r = c.get(f"/deliveries/validate/{good_d.id}", follow_redirects=True)
+    check("Validating unpacked delivery blocked", b"must be picked and packed" in r.data, r.data[:300])
+    r = c.post(f"/deliveries/status/{good_d.id}", data={"status": "Picking"}, follow_redirects=True)
+    check("Delivery -> Picking works", good_d.status == "Picking")
+    r = c.post(f"/deliveries/status/{good_d.id}", data={"status": "Packed"}, follow_redirects=True)
+    check("Delivery -> Packed works", good_d.status == "Packed")
+
     stock_before = Stock.query.filter_by(product_id=prod.id, location_id=loc.id).first()
     before_qty = stock_before.quantity
     r = c.get(f"/deliveries/validate/{good_d.id}", follow_redirects=True)
@@ -250,6 +273,8 @@ with app.app_context(), app.test_client() as c:
         }, follow_redirects=True)
         bad_d = DeliveryOrder.query.filter_by(customer="TooMuch").first()
         if bad_d:
+            c.post(f"/deliveries/status/{bad_d.id}", data={"status": "Picking"}, follow_redirects=True)
+            c.post(f"/deliveries/status/{bad_d.id}", data={"status": "Packed"}, follow_redirects=True)
             r = c.get(f"/deliveries/validate/{bad_d.id}", follow_redirects=True)
             check("Insufficient stock delivery rejected", b"insufficient stock" in r.data, r.data[:500])
             check("Stock not deducted on failed validation", bad_d.status != "Done")
@@ -270,8 +295,10 @@ with app.app_context(), app.test_client() as c:
 
     draft_d = DeliveryOrder.query.filter_by(status="Draft").first()
     if draft_d:
-        r = c.post(f"/deliveries/status/{draft_d.id}", data={"status": "Ready"}, follow_redirects=True)
-        check("Draft delivery -> Ready works", draft_d.status == "Ready")
+        r = c.post(f"/deliveries/status/{draft_d.id}", data={"status": "Packed"}, follow_redirects=True)
+        check("Draft delivery -> Packed works", draft_d.status == "Packed")
+        r = c.post(f"/deliveries/status/{draft_d.id}", data={"status": "Bogus"}, follow_redirects=True)
+        check("Invalid delivery status rejected", b"Invalid status" in r.data)
 
     # Cancel a Draft receipt
     draft_r2 = Receipt.query.filter_by(status="Draft").first()

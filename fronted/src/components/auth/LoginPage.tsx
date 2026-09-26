@@ -5,7 +5,8 @@ import { User, UserRole, Warehouse } from '../../types/inventory';
 import {
   Lock, Mail, User as UserIcon, Shield, Truck, ArrowRight,
   KeyRound, CheckCircle2, Building2, Box,
-  Eye, EyeOff, Fingerprint, Wifi, Clock, TrendingUp, ArrowUpRight
+  Eye, EyeOff, Fingerprint, Wifi, Clock, TrendingUp, ArrowUpRight,
+  Bot, LockKeyhole, Cpu, Sparkles, Zap
 } from 'lucide-react';
 
 interface LoginPageProps {

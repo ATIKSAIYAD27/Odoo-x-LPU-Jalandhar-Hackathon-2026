@@ -18,14 +18,25 @@
 <form method="GET" class="filter-bar mb-3">
   <select name="status" onchange="this.form.submit()">
     <option value="">All Statuses</option>
-    <option value="Pending"  {{ 'selected' if status_filter == 'Pending' }}>Pending (Draft / Waiting / Ready)</option>
+    <option value="Pending"  {{ 'selected' if status_filter == 'Pending' }}>Pending (Draft / Picking / Packed)</option>
     <option value="Draft"    {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
-    <option value="Waiting"  {{ 'selected' if status_filter == 'Waiting' }}>Waiting (Picking)</option>
-    <option value="Ready"    {{ 'selected' if status_filter == 'Ready' }}>Ready (Packing)</option>
+    <option value="Picking"  {{ 'selected' if status_filter == 'Picking' }}>Picking</option>
+    <option value="Packed"   {{ 'selected' if status_filter == 'Packed' }}>Packed (Ready to Ship)</option>
     <option value="Done"     {{ 'selected' if status_filter == 'Done' }}>Done (Shipped)</option>
     <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
   </select>
 </form>
+
+<!-- Pick → Pack → Validate workflow guide -->
+<div class="d-flex ai-center gap-2 mb-3" style="flex-wrap:wrap; font-size:.8rem; color:var(--text3);">
+  <span class="badge badge-draft">1. Draft</span>
+  <span>→</span>
+  <span class="badge badge-picking">2. Pick</span>
+  <span>→</span>
+  <span class="badge badge-packed">3. Pack</span>
+  <span>→</span>
+  <span class="badge badge-done">4. Validate (stock deducted)</span>
+</div>
 
 <div class="panel">
   <div class="table-wrap">
@@ -59,16 +70,22 @@
             <div class="d-flex gap-1" style="flex-wrap:wrap;">
               {% if d.status == 'Draft' %}
               <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
-                <input type="hidden" name="status" value="Waiting">
-                <button class="btn btn-amber btn-xs" title="Pick stock">→ Waiting</button>
-              </form>
-              <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
-                <input type="hidden" name="status" value="Ready">
-                <button class="btn btn-cyan btn-xs" title="Pack order">→ Ready</button>
+                <input type="hidden" name="status" value="Picking">
+                <button class="btn btn-amber btn-xs" title="Start picking stock">1 · Pick</button>
               </form>
               {% endif %}
+              {% if d.status in ['Draft', 'Picking'] %}
+              <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
+                <input type="hidden" name="status" value="Packed">
+                <button class="btn btn-cyan btn-xs" title="Mark order as packed">2 · Pack</button>
+              </form>
+              {% endif %}
+              {% if d.status == 'Packed' %}
               <a href="{{ url_for('operations.validate_delivery', id=d.id) }}" class="btn btn-emerald btn-xs"
-                 onclick="return confirm('Validate delivery DEL-{{ '%04d' % d.id }}? Stock will be deducted.')">✓ Validate</a>
+                 onclick="return confirm('Validate delivery DEL-{{ '%04d' % d.id }}? Stock will be deducted.')">3 · Validate</a>
+              {% else %}
+              <span class="btn btn-ghost btn-xs" style="opacity:.45;cursor:not-allowed;" title="Pick and pack first">3 · Validate</span>
+              {% endif %}
               <a href="{{ url_for('operations.cancel_delivery', id=d.id) }}" class="btn btn-rose btn-xs">Cancel</a>
             </div>
             {% else %}

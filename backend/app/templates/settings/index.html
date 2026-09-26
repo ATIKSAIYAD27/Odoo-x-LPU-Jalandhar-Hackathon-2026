@@ -22,6 +22,7 @@
     </div>
 
     <div class="panel-body" style="padding-bottom: 0;">
+      {% if is_manager %}
       <form method="POST" action="{{ url_for('settings.add_warehouse') }}" class="d-flex gap-2 mb-3">
         <input type="text" name="name" placeholder="New Warehouse Name (e.g. South Depot)" required autocomplete="off" style="flex:1;">
         <button type="submit" class="btn btn-primary btn-sm">
@@ -29,6 +30,11 @@
           Add
         </button>
       </form>
+      {% else %}
+      <div class="alert-banner alert-cyan mb-3" style="margin-bottom:1rem;">
+        <span>Read-only view — warehouse changes require the <strong>Inventory Manager</strong> role.</span>
+      </div>
+      {% endif %}
     </div>
 
     <div class="table-wrap">
@@ -46,7 +52,11 @@
             <td><span class="code-tag">#{{ w.id }}</span></td>
             <td class="fw-bold text-white">{{ w.name }}</td>
             <td style="text-align:right;">
+              {% if is_manager %}
               <a href="{{ url_for('settings.delete_warehouse', id=w.id) }}" class="btn btn-rose btn-xs" onclick="return confirm('Delete warehouse {{ w.name }}?')">Delete</a>
+              {% else %}
+              <span style="font-size:.72rem;color:var(--text3);">—</span>
+              {% endif %}
             </td>
           </tr>
           {% else %}
@@ -68,6 +78,7 @@
     </div>
 
     <div class="panel-body" style="padding-bottom: 0;">
+      {% if is_manager %}
       <form method="POST" action="{{ url_for('settings.add_location') }}" class="d-flex gap-2 mb-3" style="flex-wrap: wrap;">
         <input type="text" name="name" placeholder="Location Name (e.g. Shelf C3)" required autocomplete="off" style="flex: 1.2; min-width: 140px;">
         <select name="warehouse_id" required style="flex: 1.2; min-width: 140px;">
@@ -81,6 +92,11 @@
           Add Location
         </button>
       </form>
+      {% else %}
+      <div class="alert-banner alert-cyan mb-3" style="margin-bottom:1rem;">
+        <span>Read-only view — location changes require the <strong>Inventory Manager</strong> role.</span>
+      </div>
+      {% endif %}
     </div>
 
     <div class="table-wrap">
@@ -100,7 +116,11 @@
             <td class="fw-bold text-white">{{ loc.name }}</td>
             <td><span class="badge badge-ready">{{ loc.warehouse.name }}</span></td>
             <td style="text-align:right;">
+              {% if is_manager %}
               <a href="{{ url_for('settings.delete_location', id=loc.id) }}" class="btn btn-rose btn-xs" onclick="return confirm('Delete location {{ loc.name }}?')">Delete</a>
+              {% else %}
+              <span style="font-size:.72rem;color:var(--text3);">—</span>
+              {% endif %}
             </td>
           </tr>
           {% else %}

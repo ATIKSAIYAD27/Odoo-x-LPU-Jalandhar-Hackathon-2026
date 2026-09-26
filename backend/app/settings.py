@@ -2,8 +2,11 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required
 from app import db
 from app.models import Warehouse, Location, Stock, StockLedger, StockAdjustment, Receipt, DeliveryOrder, InternalTransfer
+from app.utils import role_required, is_manager
 
 settings_bp = Blueprint("settings", __name__)
+
+MANAGER_ROLE = "Inventory Manager"
 
 
 @settings_bp.route("/settings")
@@ -11,11 +14,12 @@ settings_bp = Blueprint("settings", __name__)
 def index():
     warehouses = Warehouse.query.order_by(Warehouse.name).all()
     locations = Location.query.order_by(Location.name).all()
-    return render_template("settings/index.html", warehouses=warehouses, locations=locations)
+    return render_template("settings/index.html", warehouses=warehouses, locations=locations, is_manager=is_manager())
 
 
 @settings_bp.route("/warehouses/add", methods=["POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def add_warehouse():
     name = request.form.get("name", "").strip()
     if not name:
@@ -30,6 +34,7 @@ def add_warehouse():
 
 @settings_bp.route("/warehouses/delete/<int:id>")
 @login_required
+@role_required(MANAGER_ROLE)
 def delete_warehouse(id):
     warehouse = Warehouse.query.get_or_404(id)
     if warehouse.locations:
@@ -48,6 +53,7 @@ def delete_warehouse(id):
 
 @settings_bp.route("/locations/add", methods=["POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def add_location():
     name = request.form.get("name", "").strip()
     warehouse_id = request.form.get("warehouse_id", "")
@@ -75,6 +81,7 @@ def add_location():
 
 @settings_bp.route("/locations/delete/<int:id>")
 @login_required
+@role_required(MANAGER_ROLE)
 def delete_location(id):
     location = Location.query.get_or_404(id)
     name = location.name

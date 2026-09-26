@@ -18,7 +18,7 @@ def seed_if_empty():
     manager = User(
         name="Alex Manager",
         email="manager@stocksense.io",
-        password_hash=generate_password_hash("manager123"),
+        password_hash=generate_password_hash("admin123"),
         role="Inventory Manager",
     )
     staff = User(
@@ -100,8 +100,8 @@ def seed_if_empty():
     db.session.flush()
     db.session.add(ReceiptLine(receipt_id=r2.id, product_id=products[6].id, quantity=200))
 
-    # --- Sample Delivery (Waiting — pending) -----------------------------
-    d1 = DeliveryOrder(customer="TechCorp Inc", source_location_id=loc_main_b.id, status="Waiting", created_by=staff.id)
+    # --- Sample Delivery (Picking — pending) -----------------------------
+    d1 = DeliveryOrder(customer="TechCorp Inc", source_location_id=loc_main_b.id, status="Picking", created_by=staff.id)
     db.session.add(d1)
     db.session.flush()
     db.session.add(DeliveryLine(delivery_id=d1.id, product_id=products[0].id, quantity=10))

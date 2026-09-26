@@ -1,9 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required
 from app import db
-from app.models import Product, Category, Stock, StockLedger, StockAdjustment, ReceiptLine, DeliveryLine, InternalTransfer
+from app.models import Product, Category, Location, Stock, StockLedger, StockAdjustment, ReceiptLine, DeliveryLine, InternalTransfer
+from app.utils import apply_stock_change
+from app.utils import role_required
 
 products_bp = Blueprint("products", __name__)
+
+MANAGER_ROLE = "Inventory Manager"
 
 
 def _parse_int(value, field_name):
@@ -53,6 +57,7 @@ def product_list():
 
 @products_bp.route("/products/add", methods=["GET", "POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def add_product():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -60,6 +65,8 @@ def add_product():
         category_id = request.form.get("category_id", "")
         uom = request.form.get("uom", "pcs").strip()
         reorder_level = request.form.get("reorder_level", "10").strip()
+        initial_stock = request.form.get("initial_stock", "0").strip() or "0"
+        location_id = request.form.get("location_id", "").strip()
 
         if not name:
             flash("Product name is required.", "danger")
@@ -84,6 +91,28 @@ def add_product():
         if reorder_level < 0:
             flash("Reorder level cannot be negative.", "danger")
             return redirect(url_for("products.add_product"))
+        try:
+            initial_qty = int(initial_stock)
+        except ValueError:
+            flash("Initial stock must be a whole number.", "danger")
+            return redirect(url_for("products.add_product"))
+        if initial_qty < 0:
+            flash("Initial stock cannot be negative.", "danger")
+            return redirect(url_for("products.add_product"))
+
+        initial_location_id = None
+        if initial_qty > 0:
+            if not location_id:
+                flash("A stock location is required when initial stock is greater than 0.", "danger")
+                return redirect(url_for("products.add_product"))
+            try:
+                initial_location_id = int(location_id)
+            except ValueError:
+                flash("Invalid initial stock location selected.", "danger")
+                return redirect(url_for("products.add_product"))
+            if not Location.query.get(initial_location_id):
+                flash("Selected initial stock location does not exist.", "danger")
+                return redirect(url_for("products.add_product"))
 
         existing = Product.query.filter_by(sku=sku).first()
         if existing:
@@ -93,15 +122,22 @@ def add_product():
         product = Product(name=name, sku=sku, category_id=cid, uom=uom or "pcs", reorder_level=reorder_level)
         db.session.add(product)
         db.session.commit()
+
+        if initial_qty > 0:
+            apply_stock_change(product.id, initial_location_id, initial_qty, "Initial Stock", f"Product #{product.id}")
+            db.session.commit()
+
         flash(f"Product '{name}' added successfully!", "success")
         return redirect(url_for("products.product_list"))
 
     categories = Category.query.order_by(Category.name).all()
-    return render_template("products/product_form.html", categories=categories)
+    locations = Location.query.order_by(Location.name).all()
+    return render_template("products/product_form.html", categories=categories, locations=locations)
 
 
 @products_bp.route("/products/edit/<int:id>", methods=["GET", "POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def edit_product(id):
     product = Product.query.get_or_404(id)
     if request.method == "POST":
@@ -156,6 +192,7 @@ def edit_product(id):
 
 @products_bp.route("/products/delete/<int:id>")
 @login_required
+@role_required(MANAGER_ROLE)
 def delete_product(id):
     product = Product.query.get_or_404(id)
     name = product.name
@@ -206,6 +243,7 @@ def category_list():
 
 @products_bp.route("/categories/add", methods=["POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def add_category():
     name = request.form.get("name", "").strip()
     if not name:
@@ -224,6 +262,7 @@ def add_category():
 
 @products_bp.route("/categories/edit/<int:id>", methods=["POST"])
 @login_required
+@role_required(MANAGER_ROLE)
 def edit_category(id):
     category = Category.query.get_or_404(id)
     name = request.form.get("name", "").strip()
@@ -242,6 +281,7 @@ def edit_category(id):
 
 @products_bp.route("/categories/delete/<int:id>")
 @login_required
+@role_required(MANAGER_ROLE)
 def delete_category(id):
     category = Category.query.get_or_404(id)
     if category.products:

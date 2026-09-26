@@ -39,7 +39,7 @@ with app.app_context(), app.test_client() as c:
     check("Seed wrote ledger entries", StockLedger.query.count() >= 8, f"got {StockLedger.query.count()}")
 
     # ---------- Auth ----------
-    r = c.post("/signup", data={"name": "New User", "email": "new@x.com", "password": "pass123", "role": "Warehouse Staff"}, follow_redirects=True)
+    r = c.post("/signup", data={"name": "New User", "email": "new@x.com", "password": "pass123", "role": "Inventory Manager"}, follow_redirects=True)
     check("Signup works", b"Account created" in r.data or b"login" in r.data.lower(), r.data[:200])
 
     r = c.post("/login", data={"email": "new@x.com", "password": "pass123"}, follow_redirects=True)

@@ -157,7 +157,7 @@ def deliveries():
     status_filter = request.args.get("status", "")
     query = DeliveryOrder.query
     if status_filter == "Pending":
-        query = query.filter(DeliveryOrder.status.in_(["Draft", "Waiting", "Ready"]))
+        query = query.filter(DeliveryOrder.status.in_(["Draft", "Waiting", "Ready", "Picking", "Packed"]))
     elif status_filter and status_filter != "All":
         query = query.filter(DeliveryOrder.status == status_filter)
     deliveries_list = query.order_by(DeliveryOrder.created_at.desc()).all()
@@ -220,7 +220,7 @@ def set_delivery_status(id):
     if delivery.status == "Canceled":
         flash(f"Delivery Order #{id} is canceled and cannot be changed.", "warning")
         return redirect(url_for("operations.deliveries"))
-    if new_status not in ["Waiting", "Ready"]:
+    if new_status not in ["Waiting", "Ready", "Picking", "Packed"]:
         flash(f"Invalid status '{new_status}'.", "danger")
         return redirect(url_for("operations.deliveries"))
 

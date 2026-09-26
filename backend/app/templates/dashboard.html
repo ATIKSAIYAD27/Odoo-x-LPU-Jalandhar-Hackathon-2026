@@ -18,7 +18,7 @@
   </div>
 
   <!-- Low Stock -->
-  <div class="kpi-card" onclick="window.location='{{ url_for('products.product_list') }}?status=low'">
+  <div class="kpi-card" onclick="window.location='{{ url_for('products.product_list') }}?stock_status=low'">
     <div class="kpi-icon amber">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </div>
@@ -29,7 +29,7 @@
   </div>
 
   <!-- Out of Stock -->
-  <div class="kpi-card" onclick="window.location='{{ url_for('products.product_list') }}?status=out'">
+  <div class="kpi-card" onclick="window.location='{{ url_for('products.product_list') }}?stock_status=out'">
     <div class="kpi-icon rose">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
     </div>
@@ -82,7 +82,7 @@
     <strong>Reordering Alert:</strong>
     {{ kpis.low_stock }} product(s) are low on stock and {{ kpis.out_of_stock }} are fully out of stock.
   </div>
-  <a href="{{ url_for('products.product_list') }}?status=low" class="btn btn-rose btn-sm">Review</a>
+  <a href="{{ url_for('products.product_list') }}?stock_status=low" class="btn btn-rose btn-sm">Review</a>
 </div>
 {% endif %}
 
@@ -111,17 +111,65 @@
 </div>
 
 <!-- Operations Overview -->
-{% if recent_ops %}
 <div class="panel">
   <div class="panel-header">
     <div>
-      <div class="panel-title">Recent Operations</div>
-      <div class="panel-subtitle">Latest receipts, deliveries, transfers &amp; adjustments</div>
+      <div class="panel-title">Operations Overview</div>
+      <div class="panel-subtitle">Latest receipts, deliveries, transfers &amp; adjustments — use the filters to narrow down</div>
     </div>
     <div class="d-flex gap-2">
       <a href="{{ url_for('operations.receipts') }}" class="btn btn-ghost btn-sm">View All</a>
     </div>
   </div>
+
+  <!-- Dynamic filters: document type, status, warehouse/location, category -->
+  <form method="GET" class="filter-bar" style="margin:0; padding:1rem 1.5rem; border-bottom:1px solid var(--border);">
+    <select name="doc_type" onchange="this.form.submit()">
+      <option value="">Document Type: All</option>
+      <option value="Receipt"    {{ 'selected' if filters.doc_type == 'Receipt' }}>Receipts</option>
+      <option value="Delivery"   {{ 'selected' if filters.doc_type == 'Delivery' }}>Delivery Orders</option>
+      <option value="Transfer"   {{ 'selected' if filters.doc_type == 'Transfer' }}>Internal Transfers</option>
+      <option value="Adjustment" {{ 'selected' if filters.doc_type == 'Adjustment' }}>Inventory Adjustments</option>
+    </select>
+
+    <select name="status" onchange="this.form.submit()">
+      <option value="">Status: All</option>
+      <option value="Pending"  {{ 'selected' if filters.status == 'Pending' }}>Pending (Open)</option>
+      <option value="Draft"    {{ 'selected' if filters.status == 'Draft' }}>Draft</option>
+      <option value="Waiting"  {{ 'selected' if filters.status == 'Waiting' }}>Waiting</option>
+      <option value="Ready"    {{ 'selected' if filters.status == 'Ready' }}>Ready</option>
+      <option value="Picking"  {{ 'selected' if filters.status == 'Picking' }}>Picking</option>
+      <option value="Packed"   {{ 'selected' if filters.status == 'Packed' }}>Packed</option>
+      <option value="Done"     {{ 'selected' if filters.status == 'Done' }}>Done</option>
+      <option value="Canceled" {{ 'selected' if filters.status == 'Canceled' }}>Canceled</option>
+    </select>
+
+    <select name="warehouse_id" onchange="this.form.submit()">
+      <option value="">Warehouse: All</option>
+      {% for w in warehouses %}
+      <option value="{{ w.id }}" {{ 'selected' if filters.warehouse_id == w.id }}>{{ w.name }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="location_id" onchange="this.form.submit()">
+      <option value="">Location: All</option>
+      {% for loc in locations %}
+      <option value="{{ loc.id }}" {{ 'selected' if filters.location_id == loc.id }}>{{ loc.name }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="category_id" onchange="this.form.submit()">
+      <option value="">Category: All</option>
+      {% for cat in categories %}
+      <option value="{{ cat.id }}" {{ 'selected' if filters.category_id == cat.id }}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+
+    {% if active_filter_count %}
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-rose btn-sm">Clear {{ active_filter_count }} filter(s)</a>
+    {% endif %}
+  </form>
+
   <div class="table-wrap">
     <table class="data-table">
       <thead>
@@ -144,7 +192,10 @@
             {% elif op.type == 'Transfer' %}<span style="color:var(--cyan)">⇄ Transfer</span>
             {% else %}<span style="color:var(--amber)">✎ Adjustment</span>{% endif %}
           </td>
-          <td>{{ op.partner or op.notes or '—' }}</td>
+          <td>
+            <span class="text-white fw-bold">{{ op.partner or '—' }}</span>
+            <div style="font-size:.78rem;color:var(--text3);">{{ op.notes or '' }}</div>
+          </td>
           <td>
             <span class="badge badge-{{ op.status | lower | replace(' ', '-') }}">{{ op.status }}</span>
           </td>
@@ -157,19 +208,17 @@
             {% endif %}
           </td>
         </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-6 text-muted">
+            No operations match the selected filters.
+            {% if active_filter_count %}<a href="{{ url_for('dashboard.index') }}" style="color:var(--cyan)">Clear filters</a>{% endif %}
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
-{% else %}
-<div class="panel">
-  <div class="panel-body text-center py-6">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3);margin:0 auto .75rem;display:block;"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
-    <div style="font-size:.9rem;color:var(--text3);">No operations yet. Start by creating a receipt or delivery.</div>
-    <a href="{{ url_for('operations.add_receipt') }}" class="btn btn-primary btn-sm mt-2">+ Create First Receipt</a>
-  </div>
-</div>
-{% endif %}
 
 {% endblock %}

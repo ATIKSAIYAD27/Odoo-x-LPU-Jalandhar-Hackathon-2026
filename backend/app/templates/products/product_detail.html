@@ -1,14 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>{{ product.name }}</h2>
+<h2>{{ product.name }} <span style="font-weight:normal;color:#666">({{ product.sku }})</span></h2>
 <div class="kpi-grid">
     <div class="kpi-card">
         <div class="number">{{ product.total_stock }}</div>
         <div class="label">Total Stock</div>
     </div>
-    <div class="kpi-card {{ 'low' if product.total_stock > 0 and product.total_stock <= product.reorder_level else ('out' if product.total_stock <= 0 else '') }}">
-        <div class="number">{{ product.total_stock }}</div>
-        <div class="label">Stock Status</div>
+    <div class="kpi-card">
+        <div class="number">
+            {% if product.total_stock <= 0 %}
+            <span class="stock-badge stock-out">Out of Stock</span>
+            {% elif product.total_stock <= product.reorder_level %}
+            <span class="stock-badge stock-low">Low Stock</span>
+            {% else %}
+            <span class="stock-badge stock-ok">In Stock</span>
+            {% endif %}
+        </div>
+        <div class="label">Stock Status (reorder at {{ product.reorder_level }})</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ product.category.name if product.category else '-' }}</div>
+        <div class="label">Category</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ product.uom }}</div>
+        <div class="label">Unit of Measure</div>
     </div>
 </div>
 <div class="card">

@@ -112,6 +112,7 @@ class Receipt(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
+    destination_location = db.relationship("Location", foreign_keys=[destination_location_id], backref="receipts")
     lines = db.relationship("ReceiptLine", backref="receipt", lazy=True, cascade="all, delete-orphan")
 
     VALID_STATUSES = ["Draft", "Waiting", "Ready", "Done", "Canceled"]
@@ -140,6 +141,7 @@ class DeliveryOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
+    source_location = db.relationship("Location", foreign_keys=[source_location_id], backref="delivery_orders")
     lines = db.relationship("DeliveryLine", backref="delivery", lazy=True, cascade="all, delete-orphan")
 
     VALID_STATUSES = ["Draft", "Waiting", "Ready", "Done", "Canceled"]
@@ -168,6 +170,7 @@ class InternalTransfer(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     transferred_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    product = db.relationship("Product", foreign_keys=[product_id], backref="transfers")
     from_location = db.relationship("Location", foreign_keys=[from_location_id], backref="transfers_from")
     to_location = db.relationship("Location", foreign_keys=[to_location_id], backref="transfers_to")
 
@@ -186,13 +189,13 @@ class StockAdjustment(db.Model):
     product = db.relationship("Product", back_populates="adjustments")
     location = db.relationship("Location", back_populates="adjustments")
 
-    @property
-    def difference(self):
-        return self.counted_quantity - self.previous_quantity if hasattr(self, 'previous_quantity') else 0
+    previous_quantity = db.Column(db.Integer, nullable=True)
 
     @property
     def difference(self):
-        return self.counted_quantity - self.previous_quantity if hasattr(self, 'previous_quantity') else 0
+        if self.previous_quantity is None:
+            return 0
+        return self.counted_quantity - self.previous_quantity
 
     def __repr__(self):
         return f"<StockAdjustment #{self.id}: product={self.product_id} diff={self.difference}>"

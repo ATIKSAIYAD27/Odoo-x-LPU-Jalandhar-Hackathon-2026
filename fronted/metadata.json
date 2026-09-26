@@ -1,0 +1,6 @@
+{
+  "name": "StockSense 3D Inventory Management System",
+  "description": "Modern 3D-styled enterprise inventory management system with role-based access for Inventory Managers and Warehouse Staff, automated ledger tracking, receipts, deliveries, and transfers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

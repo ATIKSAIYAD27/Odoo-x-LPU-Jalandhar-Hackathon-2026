@@ -1,29 +1,43 @@
 {% extends "base.html" %}
-{% block content %}
-<h2>Sign Up</h2>
-<div class="card">
-    <form method="POST">
-        <div class="form-group">
-            <label>Name</label>
-            <input type="text" name="name" required>
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email" required>
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" name="password" required minlength="6">
-        </div>
-        <div class="form-group">
-            <label>Role</label>
-            <select name="role">
-                <option value="Warehouse Staff">Warehouse Staff</option>
-                <option value="Inventory Manager">Inventory Manager</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Create Account</button>
-    </form>
-    <p style="margin-top:15px">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+{% block title %}Create Account{% endblock %}
+{% block auth_content %}
+<div class="auth-card">
+  <div class="auth-logo">
+    <div class="brand-cube">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    </div>
+    <div class="auth-title"><span>StockSense</span></div>
+  </div>
+  <p class="auth-subtitle">Join your team's inventory workspace</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}{% for category, message in messages %}
+  <div class="flash-msg flash-{{ category }} mb-2">{{ message }}</div>
+  {% endfor %}{% endif %}{% endwith %}
+
+  <div class="auth-section-title">Create Account</div>
+  <form method="POST">
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" name="name" required placeholder="Alex Mercer" />
+    </div>
+    <div class="form-group">
+      <label>Work Email</label>
+      <input type="email" name="email" required placeholder="alex@company.com" />
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select name="role">
+        <option value="Warehouse Staff">Warehouse Staff</option>
+        <option value="Inventory Manager">Inventory Manager</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" required minlength="6" placeholder="Min. 6 characters" />
+    </div>
+    <button type="submit" class="btn btn-primary btn-lg btn-block mt-2">Create My Account</button>
+  </form>
+  <div class="auth-link">Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></div>
 </div>
 {% endblock %}

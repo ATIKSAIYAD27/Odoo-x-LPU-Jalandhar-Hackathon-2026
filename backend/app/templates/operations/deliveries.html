@@ -35,7 +35,17 @@
                 <td>{{ d.created_at.strftime('%Y-%m-%d') if d.created_at else '-' }}</td>
                 <td class="action-links">
                     {% if d.status != 'Done' and d.status != 'Canceled' %}
-                    <a href="{{ url_for('operations.validate_delivery', id=d.id) }}" class="btn btn-sm btn-success" onclick="return confirm('Validate delivery #{{ d.id }}?')">Validate</a>
+                    {% if d.status == 'Draft' %}
+                    <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
+                        <input type="hidden" name="status" value="Waiting">
+                        <button type="submit" class="btn btn-sm btn-warning">Mark Waiting</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
+                        <input type="hidden" name="status" value="Ready">
+                        <button type="submit" class="btn btn-sm btn-warning">Mark Ready</button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('operations.validate_delivery', id=d.id) }}" class="btn btn-sm btn-success" onclick="return confirm('Validate delivery #{{ d.id }}? Stock will decrease.')">Validate</a>
                     <a href="{{ url_for('operations.cancel_delivery', id=d.id) }}" class="btn btn-sm btn-danger">Cancel</a>
                     {% endif %}
                 </td>

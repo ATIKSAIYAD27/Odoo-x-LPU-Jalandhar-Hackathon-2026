@@ -1,47 +1,87 @@
 {% extends "base.html" %}
+{% block title %}Receipts{% endblock %}
+{% block breadcrumb %}Receipts (Incoming Goods){% endblock %}
 {% block content %}
-<h2>Receipts</h2>
-<div class="card">
-    <form method="GET" style="display:flex;gap:15px;align-items:flex-end;">
-        <div class="form-group">
-            <label>Filter by Status</label>
-            <select name="status" onchange="this.form.submit()">
-                <option value="">All</option>
-                <option value="Pending" {{ 'selected' if status_filter == 'Pending' }}>Pending</option>
-                <option value="Draft" {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
-                <option value="Waiting" {{ 'selected' if status_filter == 'Waiting' }}>Waiting</option>
-                <option value="Ready" {{ 'selected' if status_filter == 'Ready' }}>Ready</option>
-                <option value="Done" {{ 'selected' if status_filter == 'Done' }}>Done</option>
-                <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
-            </select>
-        </div>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Receipts — Incoming Goods</h1>
+    <p>Receive vendor shipments. Validating auto-increases location stock.</p>
+  </div>
+  <a href="{{ url_for('operations.add_receipt') }}" class="btn btn-primary">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    New Receipt
+  </a>
 </div>
-<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-        <h2 style="margin:0">Receipt List</h2>
-        <a href="{{ url_for('operations.add_receipt') }}" class="btn btn-primary">+ New Receipt</a>
-    </div>
-    <table>
-        <thead><tr><th>ID</th><th>Supplier</th><th>Destination</th><th>Status</th><th>Lines</th><th>Created</th><th>Actions</th></tr></thead>
-        <tbody>
-            {% for r in receipts %}
-            <tr>
-                <td>#{{ r.id }}</td>
-                <td>{{ r.supplier }}</td>
-                <td>{{ r.destination_location.name }}</td>
-                <td><span class="badge badge-{{ r.status|lower }}">{{ r.status }}</span></td>
-                <td>{{ r.lines|length }}</td>
-                <td>{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '-' }}</td>
-                <td class="action-links">
-                    {% if r.status != 'Done' and r.status != 'Canceled' %}
-                    <a href="{{ url_for('operations.validate_receipt', id=r.id) }}" class="btn btn-sm btn-success" onclick="return confirm('Validate receipt #{{ r.id }}?')">Validate</a>
-                    <a href="{{ url_for('operations.cancel_receipt', id=r.id) }}" class="btn btn-sm btn-danger">Cancel</a>
-                    {% endif %}
-                </td>
-            </tr>
+
+<!-- Filter -->
+<form method="GET" class="filter-bar mb-3">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All Statuses</option>
+    <option value="Draft"    {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
+    <option value="Waiting"  {{ 'selected' if status_filter == 'Waiting' }}>Waiting</option>
+    <option value="Ready"    {{ 'selected' if status_filter == 'Ready' }}>Ready</option>
+    <option value="Done"     {{ 'selected' if status_filter == 'Done' }}>Done</option>
+    <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
+  </select>
+</form>
+
+<div class="panel">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Vendor / Supplier</th>
+          <th>Destination Location</th>
+          <th>Items</th>
+          <th>Status</th>
+          <th>Date Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in receipts %}
+        <tr>
+          <td><span class="code-tag">REC-{{ '%04d' % r.id }}</span></td>
+          <td class="fw-bold text-white">{{ r.supplier }}</td>
+          <td>{{ r.destination_location.name }}</td>
+          <td>
+            {% for line in r.lines %}
+            <div style="font-size:.8rem;"><span class="text-cyan">{{ line.product.name }}</span>: {{ line.qty }} {{ line.product.uom }}</div>
             {% endfor %}
-        </tbody>
+          </td>
+          <td><span class="badge badge-{{ r.status|lower }}">{{ r.status }}</span></td>
+          <td style="font-size:.8rem;color:var(--text3);">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
+          <td>
+            {% if r.status not in ['Done', 'Canceled'] %}
+            <div class="d-flex gap-1">
+              {% if r.status == 'Draft' %}
+              <form method="POST" action="{{ url_for('operations.set_receipt_status', id=r.id) }}" style="display:inline">
+                <input type="hidden" name="status" value="Waiting">
+                <button class="btn btn-amber btn-xs">→ Waiting</button>
+              </form>
+              <form method="POST" action="{{ url_for('operations.set_receipt_status', id=r.id) }}" style="display:inline">
+                <input type="hidden" name="status" value="Ready">
+                <button class="btn btn-cyan btn-xs">→ Ready</button>
+              </form>
+              {% endif %}
+              <a href="{{ url_for('operations.validate_receipt', id=r.id) }}" class="btn btn-emerald btn-xs"
+                 onclick="return confirm('Validate REC-{{ '%04d' % r.id }}? Stock will increase.')">✓ Validate</a>
+              <a href="{{ url_for('operations.cancel_receipt', id=r.id) }}" class="btn btn-rose btn-xs">Cancel</a>
+            </div>
+            {% else %}
+            <span style="font-size:.78rem;color:var(--text3);">{{ r.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-6 text-muted">No receipts found. <a href="{{ url_for('operations.add_receipt') }}" style="color:var(--cyan)">Create first receipt →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 </div>
 {% endblock %}

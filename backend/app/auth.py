@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from app import db
 from app.models import User, PasswordResetOTP
-from datetime import datetime, timedelta
+from datetime import datetime
 import random
 
 auth_bp = Blueprint("auth", __name__)
@@ -86,9 +86,8 @@ def forgot_password():
             )
             db.session.add(otp)
             db.session.commit()
-            flash(f"OTP generated for {email}. OTP: {otp.code}", "info")
-        else:
-            flash("If that email exists, an OTP has been generated.", "info")
+            return render_template("auth/forgot_password.html", show_otp=otp)
+        flash("If that email exists, an OTP has been generated.", "info")
 
         return redirect(url_for("auth.forgot_password"))
 
@@ -110,7 +109,7 @@ def reset_password():
             flash("Password must be at least 6 characters.", "danger")
             return redirect(url_for("auth.reset_password"))
 
-        otp = PasswordResetOTP.query.filter_by(email=email, used=False).first()
+        otp = PasswordResetOTP.query.filter_by(email=email, used=False).order_by(PasswordResetOTP.created_at.desc()).first()
         if not otp:
             flash("No valid OTP found. Please request a new one.", "danger")
             return redirect(url_for("auth.reset_password"))

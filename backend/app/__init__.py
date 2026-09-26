@@ -43,4 +43,8 @@ def create_app():
         os.makedirs(app.instance_path, exist_ok=True)
         db.create_all()
 
+        # Seed demo data on first run so the app is usable immediately
+        from app.seed import seed_if_empty
+        seed_if_empty()
+
     return app

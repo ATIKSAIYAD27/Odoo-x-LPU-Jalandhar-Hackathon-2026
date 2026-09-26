@@ -1,5 +1,5 @@
 from app import db
-from app.models import Product, Stock, StockLedger, Category, Warehouse, Location
+from app.models import Stock, StockLedger
 
 
 def get_or_create_stock(product_id, location_id, create=False):
@@ -31,22 +31,3 @@ def apply_stock_change(product_id, location_id, delta, reason, reference, create
         raise ValueError(f"Insufficient stock for product {product_id} at location {location_id}")
     stock.quantity += delta
     log_ledger(product_id, location_id, delta, reason, reference)
-
-
-def get_low_stock_count():
-    from app.models import Product, Stock
-    low = 0
-    for product in Product.query.all():
-        total = product.total_stock
-        if 0 < total <= product.reorder_level:
-            low += 1
-    return low
-
-
-def get_out_of_stock_count():
-    from app.models import Product
-    out = 0
-    for product in Product.query.all():
-        if product.total_stock <= 0:
-            out += 1
-    return out

@@ -36,7 +36,7 @@
     <table>
         <thead><tr><th>Product</th><th>Location</th><th>Change</th><th>Reason</th><th>Reference</th><th>Date</th></tr></thead>
         <tbody>
-            {% for l in ledgers|reverse %}
+            {% for l in ledgers %}
             <tr>
                 <td>{{ l.product.name if l.product else '-' }}</td>
                 <td>{{ l.location.name if l.location }}</td>

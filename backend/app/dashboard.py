@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, jsonify, request
-from flask_login import login_required, current_user
-from app import db
-from app.models import Product, Receipt, DeliveryOrder, InternalTransfer, Category, Warehouse, Location, Stock
+from flask import Blueprint, render_template, jsonify
+from flask_login import login_required
+from app.models import Product, Receipt, DeliveryOrder, InternalTransfer
 
 dashboard_bp = Blueprint("dashboard", __name__)
 

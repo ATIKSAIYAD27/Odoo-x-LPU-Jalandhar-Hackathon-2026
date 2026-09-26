@@ -7,6 +7,31 @@ from app.utils import get_or_create_stock, log_ledger, apply_stock_change
 operations_bp = Blueprint("operations", __name__)
 
 
+def _parse_line_items(form):
+    """Parse and validate product/quantity line items from a form.
+    Returns (lines, error_message). Lines are [(product_id, quantity), ...]."""
+    product_ids = form.getlist("product_id")
+    quantities = form.getlist("quantity")
+    lines = []
+    for pid, qty in zip(product_ids, quantities):
+        if not pid or not pid.strip():
+            continue
+        try:
+            q = int(qty)
+        except (ValueError, TypeError):
+            return [], f"Line quantity '{qty}' is not a valid number."
+        if q <= 0:
+            return [], f"Line quantity must be greater than 0 (got {q})."
+        try:
+            p = int(pid)
+        except (ValueError, TypeError):
+            return [], f"Invalid product selection."
+        lines.append((p, q))
+    if not lines:
+        return [], "At least one line item with a product and quantity is required."
+    return lines, None
+
+
 @operations_bp.route("/receipts")
 @login_required
 def receipts():
@@ -16,9 +41,9 @@ def receipts():
         query = query.filter(Receipt.status.in_(["Draft", "Waiting", "Ready"]))
     elif status_filter and status_filter != "All":
         query = query.filter(Receipt.status == status_filter)
-    receipts = query.order_by(Receipt.created_at.desc()).all()
+    receipts_list = query.order_by(Receipt.created_at.desc()).all()
     locations = Location.query.all()
-    return render_template("operations/receipts.html", receipts=receipts, locations=locations, status_filter=status_filter)
+    return render_template("operations/receipts.html", receipts=receipts_list, locations=locations, status_filter=status_filter)
 
 
 @operations_bp.route("/receipts/add", methods=["GET", "POST"])
@@ -28,29 +53,62 @@ def add_receipt():
         supplier = request.form.get("supplier", "").strip()
         destination_id = request.form.get("destination_location_id", "")
 
-        if not supplier or not destination_id:
-            flash("Supplier and destination location are required.", "danger")
+        if not supplier:
+            flash("Supplier name is required.", "danger")
+            return redirect(url_for("operations.add_receipt"))
+        if not destination_id:
+            flash("Destination location is required.", "danger")
+            return redirect(url_for("operations.add_receipt"))
+        try:
+            destination_id = int(destination_id)
+        except ValueError:
+            flash("Invalid destination location selected.", "danger")
+            return redirect(url_for("operations.add_receipt"))
+        if not Location.query.get(destination_id):
+            flash("Selected destination location does not exist.", "danger")
             return redirect(url_for("operations.add_receipt"))
 
-        receipt = Receipt(supplier=supplier, destination_location_id=int(destination_id), created_by=current_user.id)
+        lines, error = _parse_line_items(request.form)
+        if error:
+            flash(error, "danger")
+            return redirect(url_for("operations.add_receipt"))
+
+        receipt = Receipt(supplier=supplier, destination_location_id=destination_id, created_by=current_user.id)
         db.session.add(receipt)
         db.session.flush()
 
-        product_ids = request.form.getlist("product_id")
-        quantities = request.form.getlist("quantity")
-
-        for pid, qty in zip(product_ids, quantities):
-            if pid and int(qty) > 0:
-                line = ReceiptLine(receipt_id=receipt.id, product_id=int(pid), quantity=int(qty))
-                db.session.add(line)
+        for pid, qty in lines:
+            db.session.add(ReceiptLine(receipt_id=receipt.id, product_id=pid, quantity=qty))
 
         db.session.commit()
-        flash(f"Receipt #{receipt.id} created as Draft.", "success")
+        flash(f"Receipt #{receipt.id} created as Draft with {len(lines)} line(s).", "success")
         return redirect(url_for("operations.receipts"))
 
     products = Product.query.all()
     locations = Location.query.all()
     return render_template("operations/receipt_form.html", products=products, locations=locations)
+
+
+@operations_bp.route("/receipts/status/<int:id>", methods=["POST"])
+@login_required
+def set_receipt_status(id):
+    receipt = Receipt.query.get_or_404(id)
+    new_status = request.form.get("status", "")
+
+    if receipt.status == "Done":
+        flash(f"Receipt #{id} is already validated and cannot be changed.", "warning")
+        return redirect(url_for("operations.receipts"))
+    if receipt.status == "Canceled":
+        flash(f"Receipt #{id} is canceled and cannot be changed.", "warning")
+        return redirect(url_for("operations.receipts"))
+    if new_status not in ["Waiting", "Ready"]:
+        flash(f"Invalid status '{new_status}'.", "danger")
+        return redirect(url_for("operations.receipts"))
+
+    receipt.status = new_status
+    db.session.commit()
+    flash(f"Receipt #{id} status updated to {new_status}.", "success")
+    return redirect(url_for("operations.receipts"))
 
 
 @operations_bp.route("/receipts/validate/<int:id>")
@@ -62,6 +120,9 @@ def validate_receipt(id):
         return redirect(url_for("operations.receipts"))
     if receipt.status == "Canceled":
         flash(f"Receipt #{id} is canceled and cannot be validated.", "danger")
+        return redirect(url_for("operations.receipts"))
+    if not receipt.lines:
+        flash(f"Receipt #{id} has no line items and cannot be validated.", "danger")
         return redirect(url_for("operations.receipts"))
 
     for line in receipt.lines:
@@ -99,9 +160,9 @@ def deliveries():
         query = query.filter(DeliveryOrder.status.in_(["Draft", "Waiting", "Ready"]))
     elif status_filter and status_filter != "All":
         query = query.filter(DeliveryOrder.status == status_filter)
-    deliveries = query.order_by(DeliveryOrder.created_at.desc()).all()
+    deliveries_list = query.order_by(DeliveryOrder.created_at.desc()).all()
     locations = Location.query.all()
-    return render_template("operations/deliveries.html", deliveries=deliveries, locations=locations, status_filter=status_filter)
+    return render_template("operations/deliveries.html", deliveries=deliveries_list, locations=locations, status_filter=status_filter)
 
 
 @operations_bp.route("/deliveries/add", methods=["GET", "POST"])
@@ -111,29 +172,62 @@ def add_delivery():
         customer = request.form.get("customer", "").strip()
         source_id = request.form.get("source_location_id", "")
 
-        if not customer or not source_id:
-            flash("Customer and source location are required.", "danger")
+        if not customer:
+            flash("Customer name is required.", "danger")
+            return redirect(url_for("operations.add_delivery"))
+        if not source_id:
+            flash("Source location is required.", "danger")
+            return redirect(url_for("operations.add_delivery"))
+        try:
+            source_id = int(source_id)
+        except ValueError:
+            flash("Invalid source location selected.", "danger")
+            return redirect(url_for("operations.add_delivery"))
+        if not Location.query.get(source_id):
+            flash("Selected source location does not exist.", "danger")
             return redirect(url_for("operations.add_delivery"))
 
-        delivery = DeliveryOrder(customer=customer, source_location_id=int(source_id), created_by=current_user.id)
+        lines, error = _parse_line_items(request.form)
+        if error:
+            flash(error, "danger")
+            return redirect(url_for("operations.add_delivery"))
+
+        delivery = DeliveryOrder(customer=customer, source_location_id=source_id, created_by=current_user.id)
         db.session.add(delivery)
         db.session.flush()
 
-        product_ids = request.form.getlist("product_id")
-        quantities = request.form.getlist("quantity")
-
-        for pid, qty in zip(product_ids, quantities):
-            if pid and int(qty) > 0:
-                line = DeliveryLine(delivery_id=delivery.id, product_id=int(pid), quantity=int(qty))
-                db.session.add(line)
+        for pid, qty in lines:
+            db.session.add(DeliveryLine(delivery_id=delivery.id, product_id=pid, quantity=qty))
 
         db.session.commit()
-        flash(f"Delivery Order #{delivery.id} created as Draft.", "success")
+        flash(f"Delivery Order #{delivery.id} created as Draft with {len(lines)} line(s).", "success")
         return redirect(url_for("operations.deliveries"))
 
     products = Product.query.all()
     locations = Location.query.all()
     return render_template("operations/delivery_form.html", products=products, locations=locations)
+
+
+@operations_bp.route("/deliveries/status/<int:id>", methods=["POST"])
+@login_required
+def set_delivery_status(id):
+    delivery = DeliveryOrder.query.get_or_404(id)
+    new_status = request.form.get("status", "")
+
+    if delivery.status == "Done":
+        flash(f"Delivery Order #{id} is already validated and cannot be changed.", "warning")
+        return redirect(url_for("operations.deliveries"))
+    if delivery.status == "Canceled":
+        flash(f"Delivery Order #{id} is canceled and cannot be changed.", "warning")
+        return redirect(url_for("operations.deliveries"))
+    if new_status not in ["Waiting", "Ready"]:
+        flash(f"Invalid status '{new_status}'.", "danger")
+        return redirect(url_for("operations.deliveries"))
+
+    delivery.status = new_status
+    db.session.commit()
+    flash(f"Delivery Order #{id} status updated to {new_status}.", "success")
+    return redirect(url_for("operations.deliveries"))
 
 
 @operations_bp.route("/deliveries/validate/<int:id>")
@@ -146,15 +240,23 @@ def validate_delivery(id):
     if delivery.status == "Canceled":
         flash(f"Delivery Order #{id} is canceled and cannot be validated.", "danger")
         return redirect(url_for("operations.deliveries"))
+    if not delivery.lines:
+        flash(f"Delivery Order #{id} has no line items and cannot be validated.", "danger")
+        return redirect(url_for("operations.deliveries"))
 
     # Check stock availability first — all or nothing
-    from app.models import Stock as StockModel
     for line in delivery.lines:
-        stock = StockModel.query.filter_by(product_id=line.product_id, location_id=delivery.source_location_id).first()
-        if stock is None or stock.quantity < line.quantity:
-            product_name = Product.query.get(line.product_id).name
-            shortfall = line.quantity - (stock.quantity if stock else 0)
-            flash(f"Cannot validate Delivery #{id}: insufficient stock for '{product_name}'. Shortfall: {shortfall} units.", "danger")
+        stock = Stock.query.filter_by(product_id=line.product_id, location_id=delivery.source_location_id).first()
+        product = Product.query.get(line.product_id)
+        product_name = product.name if product else f"product #{line.product_id}"
+        available = stock.quantity if stock else 0
+        if available < line.quantity:
+            shortfall = line.quantity - available
+            flash(
+                f"Cannot validate Delivery #{id}: insufficient stock for '{product_name}'. "
+                f"Requested {line.quantity}, available {available}. Shortfall: {shortfall} units.",
+                "danger",
+            )
             return redirect(url_for("operations.deliveries"))
 
     # All lines have enough stock — apply
@@ -190,38 +292,51 @@ def transfers():
         quantity = request.form.get("quantity", "")
 
         if not product_id or not from_loc or not to_loc or not quantity:
-            flash("All fields are required.", "danger")
+            flash("All fields (product, source, destination, quantity) are required.", "danger")
             return redirect(url_for("operations.transfers"))
-
         try:
+            product_id = int(product_id)
+            from_loc = int(from_loc)
+            to_loc = int(to_loc)
             quantity = int(quantity)
         except ValueError:
-            flash("Quantity must be a positive number.", "danger")
+            flash("All fields must be valid numbers.", "danger")
             return redirect(url_for("operations.transfers"))
 
         if quantity <= 0:
             flash("Quantity must be greater than 0.", "danger")
             return redirect(url_for("operations.transfers"))
-        if int(from_loc) == int(to_loc):
+        if from_loc == to_loc:
             flash("Source and destination locations must be different.", "danger")
             return redirect(url_for("operations.transfers"))
 
         product = Product.query.get(product_id)
+        if not product:
+            flash("Selected product does not exist.", "danger")
+            return redirect(url_for("operations.transfers"))
         from_location = Location.query.get(from_loc)
         to_location = Location.query.get(to_loc)
+        if not from_location or not to_location:
+            flash("One or both selected locations do not exist.", "danger")
+            return redirect(url_for("operations.transfers"))
 
-        stock = get_or_create_stock(product_id, from_loc)
-        if stock.quantity < quantity:
-            product_name = product.name if product else str(product_id)
-            shortfall = quantity - stock.quantity
-            flash(f"Insufficient stock for '{product_name}' at {from_location.name}. Shortfall: {shortfall} units.", "danger")
+        # Check stock at source (do NOT create a row just to check)
+        stock = Stock.query.filter_by(product_id=product_id, location_id=from_loc).first()
+        available = stock.quantity if stock else 0
+        if available < quantity:
+            shortfall = quantity - available
+            flash(
+                f"Insufficient stock for '{product.name}' at {from_location.name}. "
+                f"Requested {quantity}, available {available}. Shortfall: {shortfall} units.",
+                "danger",
+            )
             return redirect(url_for("operations.transfers"))
 
         # Apply transfer immediately
         transfer = InternalTransfer(
-            product_id=int(product_id),
-            from_location_id=int(from_loc),
-            to_location_id=int(to_loc),
+            product_id=product_id,
+            from_location_id=from_loc,
+            to_location_id=to_loc,
             quantity=quantity,
         )
         db.session.add(transfer)
@@ -231,13 +346,13 @@ def transfers():
         apply_stock_change(product_id, to_loc, quantity, "Transfer-in", f"Transfer #{transfer.id}")
 
         db.session.commit()
-        flash(f"Transfer of {quantity} {product.name if product else 'units'} completed.", "success")
+        flash(f"Transfer of {quantity} {product.name} completed ({from_location.name} -> {to_location.name}).", "success")
         return redirect(url_for("operations.transfers"))
 
     products = Product.query.all()
     locations = Location.query.all()
-    transfers = InternalTransfer.query.order_by(InternalTransfer.transferred_at.desc()).all()
-    return render_template("operations/transfers.html", products=products, locations=locations, transfers=transfers)
+    transfers_list = InternalTransfer.query.order_by(InternalTransfer.transferred_at.desc()).all()
+    return render_template("operations/transfers.html", products=products, locations=locations, transfers=transfers_list)
 
 
 @operations_bp.route("/adjustments", methods=["GET", "POST"])
@@ -249,17 +364,27 @@ def adjustments():
         counted_quantity = request.form.get("counted_quantity", "")
 
         if not product_id or not location_id or not counted_quantity:
-            flash("All fields are required.", "danger")
+            flash("All fields (product, location, counted quantity) are required.", "danger")
             return redirect(url_for("operations.adjustments"))
-
         try:
+            product_id = int(product_id)
+            location_id = int(location_id)
             counted_quantity = int(counted_quantity)
         except ValueError:
-            flash("Counted quantity must be a non-negative number.", "danger")
+            flash("Product, location, and counted quantity must be valid numbers.", "danger")
             return redirect(url_for("operations.adjustments"))
 
         if counted_quantity < 0:
             flash("Counted quantity cannot be negative.", "danger")
+            return redirect(url_for("operations.adjustments"))
+
+        product = Product.query.get(product_id)
+        location = Location.query.get(location_id)
+        if not product:
+            flash("Selected product does not exist.", "danger")
+            return redirect(url_for("operations.adjustments"))
+        if not location:
+            flash("Selected location does not exist.", "danger")
             return redirect(url_for("operations.adjustments"))
 
         stock = get_or_create_stock(product_id, location_id, create=True)
@@ -267,9 +392,10 @@ def adjustments():
         difference = counted_quantity - previous_quantity
 
         adjustment = StockAdjustment(
-            product_id=int(product_id),
-            location_id=int(location_id),
+            product_id=product_id,
+            location_id=location_id,
             counted_quantity=counted_quantity,
+            previous_quantity=previous_quantity,
         )
         db.session.add(adjustment)
         db.session.flush()
@@ -279,7 +405,11 @@ def adjustments():
         log_ledger(product_id, location_id, difference, "Adjustment", f"Adjustment #{adjustment.id}")
 
         db.session.commit()
-        flash(f"Adjustment recorded: {difference:+d} units for product at {Location.query.get(location_id).name}.", "success")
+        flash(
+            f"Adjustment recorded: {product.name} at {location.name} changed by {difference:+d} "
+            f"(was {previous_quantity}, now {counted_quantity}).",
+            "success",
+        )
         return redirect(url_for("operations.adjustments"))
 
     products = Product.query.all()

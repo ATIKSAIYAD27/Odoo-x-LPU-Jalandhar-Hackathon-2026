@@ -1,59 +1,97 @@
 {% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block breadcrumb %}Products{% endblock %}
 {% block content %}
-<h2>Products</h2>
-<div class="card">
-    <form method="GET" style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
-        <div class="form-group" style="flex:2;min-width:200px;">
-            <label>Search</label>
-            <input type="text" name="search" placeholder="Name or SKU..." value="{{ search }}">
-        </div>
-        <div class="form-group">
-            <label>Category</label>
-            <select name="category">
-                <option value="">All Categories</option>
-                {% for cat in categories %}
-                <option value="{{ cat.id }}" {{ 'selected' if cat.id|int == category_id|int }}>{{ cat.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Stock Status</label>
-            <select name="stock_status" onchange="this.form.submit()">
-                <option value="">All</option>
-                <option value="low" {{ 'selected' if stock_status == 'low' }}>Low Stock</option>
-                <option value="out" {{ 'selected' if stock_status == 'out' }}>Out of Stock</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Filter</button>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Products Catalog</h1>
+    <p>Manage SKUs, categories, stock levels, and reordering rules</p>
+  </div>
+  <a href="{{ url_for('products.add_product') }}" class="btn btn-primary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    Add Product
+  </a>
 </div>
-<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-        <h2 style="margin:0">Product List</h2>
-        <a href="{{ url_for('products.add_product') }}" class="btn btn-primary">+ Add Product</a>
-    </div>
-    <table>
-        <thead>
-            <tr><th>ID</th><th>Name</th><th>SKU</th><th>Category</th><th>UOM</th><th>Reorder Level</th><th>Total Stock</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for p in products %}
-            <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.name }}</td>
-                <td>{{ p.sku }}</td>
-                <td>{{ p.category.name if p.category else '-' }}</td>
-                <td>{{ p.uom }}</td>
-                <td>{{ p.reorder_level }}</td>
-                <td>{{ p.total_stock }}</td>
-                <td class="action-links">
-                    <a href="{{ url_for('products.product_detail', id=p.id) }}" class="btn btn-sm btn-primary">View</a>
-                    <a href="{{ url_for('products.edit_product', id=p.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    <a href="{{ url_for('products.delete_product', id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ p.name }}?')">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar mb-3">
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" name="search" placeholder="Search name or SKU..." value="{{ search }}" style="min-width:240px;" />
+  </div>
+  <select name="category">
+    <option value="">All Categories</option>
+    {% for cat in categories %}
+    <option value="{{ cat.id }}" {{ 'selected' if cat.id|int == category_id|int }}>{{ cat.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="stock_status" onchange="this.form.submit()">
+    <option value="">All Stock Statuses</option>
+    <option value="low" {{ 'selected' if stock_status == 'low' }}>Low Stock (Alert)</option>
+    <option value="out" {{ 'selected' if stock_status == 'out' }}>Out of Stock</option>
+  </select>
+  <button type="submit" class="btn btn-cyan btn-sm">Apply Filter</button>
+  <a href="{{ url_for('products.product_list') }}" class="btn btn-ghost btn-sm">Reset</a>
+</form>
+
+<div class="panel">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>SKU / Code</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>UoM</th>
+          <th>Reorder Level</th>
+          <th>Total In Stock</th>
+          <th>Stock Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><span class="code-tag">{{ p.sku }}</span></td>
+          <td>
+            <div class="fw-bold text-white">{{ p.name }}</div>
+          </td>
+          <td>{{ p.category.name if p.category else '—' }}</td>
+          <td>{{ p.uom }}</td>
+          <td>
+            <span style="font-family:var(--mono);font-size:.82rem;">{{ p.reorder_level }} {{ p.uom }}</span>
+          </td>
+          <td>
+            <strong class="mono {% if p.total_stock == 0 %}text-rose{% elif p.total_stock <= p.reorder_level %}text-amber{% else %}text-emerald{% endif %}">
+              {{ p.total_stock }} {{ p.uom }}
+            </strong>
+          </td>
+          <td>
+            {% if p.total_stock == 0 %}
+              <span class="badge badge-out-stock">Out of Stock</span>
+            {% elif p.total_stock <= p.reorder_level %}
+              <span class="badge badge-low-stock">Low Stock</span>
+            {% else %}
+              <span class="badge badge-in-stock">In Stock</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('products.product_detail', id=p.id) }}" class="btn btn-ghost btn-xs">View</a>
+              <a href="{{ url_for('products.edit_product', id=p.id) }}" class="btn btn-cyan btn-xs">Edit</a>
+              <a href="{{ url_for('products.delete_product', id=p.id) }}" class="btn btn-rose btn-xs"
+                 onclick="return confirm('Delete {{ p.name }}? This cannot be undone.')">Del</a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-6 text-muted">No products found. <a href="{{ url_for('products.add_product') }}" style="color:var(--cyan)">Add your first product →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 </div>
 {% endblock %}

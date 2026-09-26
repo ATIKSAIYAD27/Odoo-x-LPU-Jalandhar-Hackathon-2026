@@ -14,6 +14,7 @@
   </a>
 </div>
 
+{% if current_user.role == 'Inventory Manager' %}
 <!-- Add Category Card -->
 <div class="panel mb-4" style="max-width: 700px;">
   <div class="panel-header">
@@ -32,6 +33,7 @@
     </form>
   </div>
 </div>
+{% endif %}
 
 <!-- Categories List -->
 <div class="panel">
@@ -61,6 +63,7 @@
             <span class="badge badge-ready">{{ cat.products|length }} products</span>
           </td>
           <td>
+            {% if current_user.role == 'Inventory Manager' %}
             <div class="d-flex ai-center gap-2">
               <form method="POST" action="{{ url_for('products.edit_category', id=cat.id) }}" class="d-flex gap-1" style="flex:1;">
                 <input type="text" name="name" value="{{ cat.name }}" required style="padding: .3rem .6rem; font-size: .82rem; height: 32px;">
@@ -68,6 +71,9 @@
               </form>
               <a href="{{ url_for('products.delete_category', id=cat.id) }}" class="btn btn-rose btn-xs" style="height: 32px;" onclick="return confirm('Delete category {{ cat.name }}?')">Delete</a>
             </div>
+            {% else %}
+            <span style="font-size:.75rem;color:var(--text3);">Read-only</span>
+            {% endif %}
           </td>
         </tr>
         {% else %}

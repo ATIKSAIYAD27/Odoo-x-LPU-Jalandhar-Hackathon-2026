@@ -426,5 +426,5 @@ def move_history():
     if reason_filter:
         query = query.filter(StockLedger.reason == reason_filter)
     ledgers = query.order_by(StockLedger.created_at.desc()).all()
-    reasons = ["Receipt", "Delivery", "Transfer-out", "Transfer-in", "Adjustment"]
+    reasons = ["Receipt", "Delivery", "Transfer-out", "Transfer-in", "Adjustment", "Initial Stock"]
     return render_template("operations/move_history.html", ledgers=ledgers, reasons=reasons, reason_filter=reason_filter)

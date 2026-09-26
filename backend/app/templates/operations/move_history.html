@@ -1,38 +1,74 @@
 {% extends "base.html" %}
+{% block title %}Stock Ledger / Move History{% endblock %}
+{% block breadcrumb %}Move History (Stock Ledger){% endblock %}
 {% block content %}
-<h2>Move History</h2>
-<div class="card">
-    <form method="GET" style="display:flex;gap:15px;align-items:flex-end;">
-        <div class="form-group">
-            <label>Filter by Reason</label>
-            <select name="reason" onchange="this.form.submit()">
-                <option value="">All Reasons</option>
-                {% for r in reasons %}
-                <option value="{{ r }}" {{ 'selected' if reason_filter == r }}>{{ r }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Stock Ledger — Complete Move History</h1>
+    <p>Every single inventory transaction is permanently logged. Real-time audit trail for all receipts, deliveries, transfers, and count adjustments.</p>
+  </div>
 </div>
-<div class="card">
-    <table>
-        <thead><tr><th>ID</th><th>Product</th><th>Location</th><th>Change</th><th>Reason</th><th>Reference</th><th>Date</th></tr></thead>
-        <tbody>
-            {% for l in ledgers %}
-            <tr>
-                <td>#{{ l.id }}</td>
-                <td>{{ l.product.name if l.product else '-' }}</td>
-                <td>{{ l.location.name if l.location }}</td>
-                <td style="color:{{ 'green' if l.change > 0 else 'red' }}">{{ l.change }}</td>
-                <td><span class="badge badge-{{ l.reason|lower }}">{{ l.reason }}</span></td>
-                <td>{{ l.reference }}</td>
-                <td>{{ l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+
+<!-- Reason Filter Bar -->
+<form method="GET" class="filter-bar mb-3">
+  <select name="reason" onchange="this.form.submit()">
+    <option value="">All Movement Types (Entire Ledger)</option>
+    {% for r in reasons %}
+    <option value="{{ r }}" {{ 'selected' if reason_filter == r }}>{{ r }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">Audit Ledger Entries</div>
+      <div class="panel-subtitle">{{ ledgers|length }} immutable ledger record(s) matching criteria</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">Log ID</th>
+          <th>Product</th>
+          <th>Location</th>
+          <th>Net Quantity Change</th>
+          <th>Transaction Reason</th>
+          <th>Source Reference</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in ledgers %}
+        <tr>
+          <td><span class="code-tag">#{{ l.id }}</span></td>
+          <td class="fw-bold text-white">{{ l.product.name if l.product else '-' }}</td>
+          <td>{{ l.location.name if l.location else '-' }}</td>
+          <td>
+            <span style="font-family: var(--mono); font-weight: 700; font-size: .95rem; color: {{ '#34d399' if l.change > 0 else '#fda4af' if l.change < 0 else 'var(--text2)' }};">
+              {{ '%+d' % l.change if l.change != 0 else '0' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-{{ 'done' if l.reason == 'Receipt' else 'waiting' if 'Transfer' in l.reason else 'ready' if l.reason == 'Delivery' else 'draft' }}">
+              {{ l.reason }}
+            </span>
+          </td>
+          <td><span class="code-tag" style="background: rgba(255,255,255,.05); color: #cbd5e1; border-color: var(--border2);">{{ l.reference }}</span></td>
+          <td style="font-size: .8rem; color: var(--text3);">
+            {{ l.created_at.strftime('%d %b %Y, %H:%M:%S') if l.created_at else '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-6 text-muted">No movement history entries match your filter.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-    {% if not ledgers %}
-    <p>No ledger entries found.</p>
-    {% endif %}
+  </div>
 </div>
 {% endblock %}

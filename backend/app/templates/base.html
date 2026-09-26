@@ -942,9 +942,13 @@
         </a>
 
         <div class="nav-label">Catalog</div>
-        <a href="{{ url_for('products.product_list') }}" class="nav-link {% if 'products.' in request.endpoint %}active{% endif %}">
+        <a href="{{ url_for('products.product_list') }}" class="nav-link {% if request.endpoint in ['products.product_list', 'products.add_product', 'products.edit_product', 'products.product_detail'] %}active{% endif %}">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
           <span>Products</span>
+        </a>
+        <a href="{{ url_for('products.category_list') }}" class="nav-link {% if request.endpoint == 'products.category_list' %}active{% endif %}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+          <span>Categories</span>
         </a>
 
         <div class="nav-label">Operations</div>

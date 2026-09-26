@@ -128,6 +128,12 @@ class ReceiptLine(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
 
+    product = db.relationship("Product", foreign_keys=[product_id])
+
+    @property
+    def qty(self):
+        return self.quantity
+
     def __repr__(self):
         return f"<ReceiptLine product={self.product_id} qty={self.quantity}>"
 
@@ -156,6 +162,12 @@ class DeliveryLine(db.Model):
     delivery_id = db.Column(db.Integer, db.ForeignKey("delivery_orders.id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+
+    product = db.relationship("Product", foreign_keys=[product_id])
+
+    @property
+    def qty(self):
+        return self.quantity
 
     def __repr__(self):
         return f"<DeliveryLine product={self.product_id} qty={self.quantity}>"

@@ -1,57 +1,88 @@
 {% extends "base.html" %}
+{% block title %}Delivery Orders{% endblock %}
+{% block breadcrumb %}Deliveries (Outgoing Goods){% endblock %}
 {% block content %}
-<h2>Deliveries</h2>
-<div class="card">
-    <form method="GET" style="display:flex;gap:15px;align-items:flex-end;">
-        <div class="form-group">
-            <label>Filter by Status</label>
-            <select name="status" onchange="this.form.submit()">
-                <option value="">All</option>
-                <option value="Pending" {{ 'selected' if status_filter == 'Pending' }}>Pending</option>
-                <option value="Draft" {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
-                <option value="Waiting" {{ 'selected' if status_filter == 'Waiting' }}>Waiting</option>
-                <option value="Ready" {{ 'selected' if status_filter == 'Ready' }}>Ready</option>
-                <option value="Done" {{ 'selected' if status_filter == 'Done' }}>Done</option>
-                <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
-            </select>
-        </div>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Deliveries — Outgoing Goods</h1>
+    <p>Pick, pack, and validate customer shipments. Validation automatically deducts location stock.</p>
+  </div>
+  <a href="{{ url_for('operations.add_delivery') }}" class="btn btn-primary">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    New Delivery Order
+  </a>
 </div>
-<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-        <h2 style="margin:0">Delivery List</h2>
-        <a href="{{ url_for('operations.add_delivery') }}" class="btn btn-primary">+ New Delivery</a>
-    </div>
-    <table>
-        <thead><tr><th>ID</th><th>Customer</th><th>Source</th><th>Status</th><th>Lines</th><th>Created</th><th>Actions</th></tr></thead>
-        <tbody>
-            {% for d in deliveries %}
-            <tr>
-                <td>#{{ d.id }}</td>
-                <td>{{ d.customer }}</td>
-                <td>{{ d.source_location.name }}</td>
-                <td><span class="badge badge-{{ d.status|lower }}">{{ d.status }}</span></td>
-                <td>{{ d.lines|length }}</td>
-                <td>{{ d.created_at.strftime('%Y-%m-%d') if d.created_at else '-' }}</td>
-                <td class="action-links">
-                    {% if d.status != 'Done' and d.status != 'Canceled' %}
-                    {% if d.status == 'Draft' %}
-                    <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
-                        <input type="hidden" name="status" value="Waiting">
-                        <button type="submit" class="btn btn-sm btn-warning">Mark Waiting</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
-                        <input type="hidden" name="status" value="Ready">
-                        <button type="submit" class="btn btn-sm btn-warning">Mark Ready</button>
-                    </form>
-                    {% endif %}
-                    <a href="{{ url_for('operations.validate_delivery', id=d.id) }}" class="btn btn-sm btn-success" onclick="return confirm('Validate delivery #{{ d.id }}? Stock will decrease.')">Validate</a>
-                    <a href="{{ url_for('operations.cancel_delivery', id=d.id) }}" class="btn btn-sm btn-danger">Cancel</a>
-                    {% endif %}
-                </td>
-            </tr>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar mb-3">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All Statuses</option>
+    <option value="Pending"  {{ 'selected' if status_filter == 'Pending' }}>Pending (Draft / Waiting / Ready)</option>
+    <option value="Draft"    {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
+    <option value="Waiting"  {{ 'selected' if status_filter == 'Waiting' }}>Waiting (Picking)</option>
+    <option value="Ready"    {{ 'selected' if status_filter == 'Ready' }}>Ready (Packing)</option>
+    <option value="Done"     {{ 'selected' if status_filter == 'Done' }}>Done (Shipped)</option>
+    <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
+  </select>
+</form>
+
+<div class="panel">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Customer</th>
+          <th>Source Location</th>
+          <th>Items / Quantities</th>
+          <th>Status</th>
+          <th>Date Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in deliveries %}
+        <tr>
+          <td><span class="code-tag">DEL-{{ '%04d' % d.id }}</span></td>
+          <td class="fw-bold text-white">{{ d.customer }}</td>
+          <td>{{ d.source_location.name }}</td>
+          <td>
+            {% for line in d.lines %}
+            <div style="font-size:.8rem;"><span class="text-cyan">{{ line.product.name }}</span>: {{ line.quantity }} {{ line.product.uom }}</div>
             {% endfor %}
-        </tbody>
+          </td>
+          <td><span class="badge badge-{{ d.status|lower }}">{{ d.status }}</span></td>
+          <td style="font-size:.8rem;color:var(--text3);">{{ d.created_at.strftime('%d %b %Y') if d.created_at else '—' }}</td>
+          <td>
+            {% if d.status not in ['Done', 'Canceled'] %}
+            <div class="d-flex gap-1" style="flex-wrap:wrap;">
+              {% if d.status == 'Draft' %}
+              <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
+                <input type="hidden" name="status" value="Waiting">
+                <button class="btn btn-amber btn-xs" title="Pick stock">→ Waiting</button>
+              </form>
+              <form method="POST" action="{{ url_for('operations.set_delivery_status', id=d.id) }}" style="display:inline">
+                <input type="hidden" name="status" value="Ready">
+                <button class="btn btn-cyan btn-xs" title="Pack order">→ Ready</button>
+              </form>
+              {% endif %}
+              <a href="{{ url_for('operations.validate_delivery', id=d.id) }}" class="btn btn-emerald btn-xs"
+                 onclick="return confirm('Validate delivery DEL-{{ '%04d' % d.id }}? Stock will be deducted.')">✓ Validate</a>
+              <a href="{{ url_for('operations.cancel_delivery', id=d.id) }}" class="btn btn-rose btn-xs">Cancel</a>
+            </div>
+            {% else %}
+            <span style="font-size:.78rem;color:var(--text3);">{{ d.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-6 text-muted">No delivery orders found. <a href="{{ url_for('operations.add_delivery') }}" style="color:var(--cyan)">Create first delivery →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 </div>
 {% endblock %}

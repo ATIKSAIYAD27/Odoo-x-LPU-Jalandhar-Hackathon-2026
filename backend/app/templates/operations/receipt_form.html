@@ -1,52 +1,114 @@
 {% extends "base.html" %}
+{% block title %}New Receipt{% endblock %}
+{% block breadcrumb %}New Receipt (Incoming){% endblock %}
 {% block content %}
-<h2>Add Receipt</h2>
-<div class="card">
-    <form method="POST">
-        <div class="form-row">
-            <div class="form-group">
-                <label>Supplier</label>
-                <input type="text" name="supplier" required>
-            </div>
-            <div class="form-group">
-                <label>Destination Location</label>
-                <select name="destination_location_id" required>
-                    <option value="">Select Location</option>
-                    {% for loc in locations %}
-                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        <h3 style="margin:15px 0 10px">Line Items</h3>
-        <div id="line-items">
-            <div class="form-row" style="margin-bottom:10px;">
-                <div class="form-group">
-                    <select name="product_id" required>
-                        <option value="">Select Product</option>
-                        {% for p in products %}
-                        <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="number" name="quantity" placeholder="Quantity" required min="1">
-                </div>
-            </div>
-        </div>
-        <button type="button" class="btn btn-warning btn-sm" onclick="addLine()">+ Add Line</button>
-        <br><br>
-        <button type="submit" class="btn btn-primary">Create Receipt (Draft)</button>
-        <a href="{{ url_for('operations.receipts') }}" class="btn btn-danger">Cancel</a>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Create Inbound Receipt</h1>
+    <p>Record shipments arriving from vendors and suppliers. Validating will automatically increase inventory.</p>
+  </div>
+  <a href="{{ url_for('operations.receipts') }}" class="btn btn-ghost">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    Back to Receipts
+  </a>
 </div>
+
+<div style="max-width: 840px; margin: 0 auto;">
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Receipt Header & Destination</div>
+        <div class="panel-subtitle">Shipment details and designated receiving warehouse zone</div>
+      </div>
+      <span class="badge badge-draft">Draft</span>
+    </div>
+
+    <div class="panel-body">
+      <form method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="supplier">Vendor / Supplier Name *</label>
+            <input type="text" id="supplier" name="supplier" placeholder="e.g. Acme Electronics, Global Logistics Co" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="destination_location_id">Destination Location (Receiving Bay) *</label>
+            <select id="destination_location_id" name="destination_location_id" required>
+              <option value="">Select receiving location...</option>
+              {% for loc in locations %}
+              <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Line items section -->
+        <div style="margin: 1.5rem 0 .75rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; color: #fff; font-size: .95rem;">Line Items (Products & Inbound Quantities)</div>
+            <div style="font-size: .75rem; color: var(--text3);">Add products included in this delivery bill</div>
+          </div>
+          <button type="button" class="btn btn-cyan btn-xs" onclick="addLine()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            + Add Product Line
+          </button>
+        </div>
+
+        <div id="line-items" style="display: flex; flex-direction: column; gap: .75rem;">
+          <div class="line-row form-row" style="background: rgba(0,0,0,.2); padding: .75rem; border-radius: var(--r); border: 1px solid var(--border);">
+            <div class="form-group" style="margin-bottom: 0; flex: 2;">
+              <label style="font-size:.72rem;">Product *</label>
+              <select name="product_id" required>
+                <option value="">Select Product...</option>
+                {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+              <label style="font-size:.72rem;">Quantity *</label>
+              <input type="number" name="quantity" placeholder="Qty" required min="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex ai-center gap-2" style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <button type="submit" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Create Receipt (Draft)
+          </button>
+          <a href="{{ url_for('operations.receipts') }}" class="btn btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 function addLine() {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    div.style.marginBottom = '10px';
-    div.innerHTML = `<div class="form-group"><select name="product_id" required><option value="">Select Product</option>{% for p in products %}<option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>{% endfor %}</select></div><div class="form-group"><input type="number" name="quantity" placeholder="Quantity" required min="1"></div>`;
-    document.getElementById('line-items').appendChild(div);
+  const container = document.getElementById('line-items');
+  const div = document.createElement('div');
+  div.className = 'line-row form-row';
+  div.style = 'background: rgba(0,0,0,.2); padding: .75rem; border-radius: var(--r); border: 1px solid var(--border);';
+  div.innerHTML = `
+    <div class="form-group" style="margin-bottom: 0; flex: 2;">
+      <label style="font-size:.72rem;">Product *</label>
+      <select name="product_id" required>
+        <option value="">Select Product...</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+      <label style="font-size:.72rem;">Quantity *</label>
+      <input type="number" name="quantity" placeholder="Qty" required min="1">
+    </div>
+    <div style="display:flex;align-items:flex-end;margin-bottom:0;">
+      <button type="button" class="btn btn-rose btn-xs" style="height:38px;padding:0 .6rem;" onclick="this.closest('.line-row').remove()" title="Remove line">✕</button>
+    </div>
+  `;
+  container.appendChild(div);
 }
 </script>
 {% endblock %}

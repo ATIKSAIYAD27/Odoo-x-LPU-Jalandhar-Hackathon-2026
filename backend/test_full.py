@@ -18,6 +18,12 @@ def check(label, condition, detail=""):
 
 failures = 0
 
+with app.app_context():
+    db.drop_all()
+    db.create_all()
+    from app.seed import seed_if_empty
+    seed_if_empty()
+
 with app.app_context(), app.test_client() as c:
     # ---------- Seed data ----------
     check("Seed created categories", Category.query.count() >= 5, f"got {Category.query.count()}")
@@ -411,6 +417,7 @@ with app.app_context(), app.test_client() as c:
     check("Login with new password works", r.status_code == 200)
 
     # ---------- Auth required ----------
+    c.get("/logout", follow_redirects=True)
     r = c.get("/", follow_redirects=False)
     check("Unauthenticated / redirects to login", r.status_code in (302, 401))
     r = c.get("/products", follow_redirects=False)

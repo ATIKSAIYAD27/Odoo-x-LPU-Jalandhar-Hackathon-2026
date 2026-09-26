@@ -1,40 +1,86 @@
 {% extends "base.html" %}
+{% block title %}User Profile{% endblock %}
+{% block breadcrumb %}My Profile{% endblock %}
 {% block content %}
-<h2>My Profile</h2>
-<div class="card">
-    <h2>Profile Information</h2>
-    <form method="POST" action="{{ url_for('profile.edit_profile') }}">
-        <div class="form-group">
-            <label>Name</label>
-            <input type="text" name="name" value="{{ user.name }}" required>
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" value="{{ user.email }}" disabled>
-        </div>
-        <div class="form-group">
-            <label>Role</label>
-            <input type="text" value="{{ user.role }}" disabled>
-        </div>
-        <button type="submit" class="btn btn-primary">Update Profile</button>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Operator Profile & Security</h1>
+    <p>Manage your account credentials, security passphrase, and verify permissions assigned to your role.</p>
+  </div>
 </div>
-<div class="card">
-    <h2>Change Password</h2>
-    <form method="POST" action="{{ url_for('profile.change_password') }}">
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 960px; margin: 0 auto; align-items: start;">
+  <!-- Profile Info Card -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Profile Information</div>
+        <div class="panel-subtitle">Current user identity & authorization level</div>
+      </div>
+      <span class="badge badge-ready">{{ user.role }}</span>
+    </div>
+
+    <div class="panel-body">
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}">
         <div class="form-group">
-            <label>Current Password</label>
-            <input type="password" name="current_password" required>
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" name="name" value="{{ user.name }}" required autocomplete="name">
         </div>
         <div class="form-group">
-            <label>New Password</label>
-            <input type="password" name="new_password" required minlength="6">
+          <label>Email Address (Immutable)</label>
+          <input type="email" value="{{ user.email }}" disabled style="opacity: .6; cursor: not-allowed;">
         </div>
         <div class="form-group">
-            <label>Confirm New Password</label>
-            <input type="password" name="confirm_password" required minlength="6">
+          <label>Assigned IMS Role</label>
+          <input type="text" value="{{ user.role }}" disabled style="opacity: .6; cursor: not-allowed;">
+          <div style="font-size: .75rem; color: var(--text3); margin-top: .35rem;">
+            Role controls permissions: Inventory Manager (full controls) vs Warehouse Staff (transfers, picking, cycle counts).
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary">Change Password</button>
-    </form>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <button type="submit" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Update Profile
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Card -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Change Password</div>
+        <div class="panel-subtitle">Update your account authentication credentials</div>
+      </div>
+    </div>
+
+    <div class="panel-body">
+      <form method="POST" action="{{ url_for('profile.change_password') }}">
+        <div class="form-group">
+          <label for="current_password">Current Password *</label>
+          <input type="password" id="current_password" name="current_password" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label for="new_password">New Password *</label>
+          <input type="password" id="new_password" name="new_password" required minlength="6" placeholder="At least 6 characters">
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm New Password *</label>
+          <input type="password" id="confirm_password" name="confirm_password" required minlength="6" placeholder="Repeat new password">
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <button type="submit" class="btn btn-cyan">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Change Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

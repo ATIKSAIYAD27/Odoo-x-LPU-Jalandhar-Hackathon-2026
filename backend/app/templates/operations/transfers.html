@@ -1,65 +1,117 @@
 {% extends "base.html" %}
+{% block title %}Internal Transfers{% endblock %}
+{% block breadcrumb %}Internal Transfers{% endblock %}
 {% block content %}
-<h2>Internal Transfers</h2>
-<div class="card">
-    <h2>New Transfer</h2>
-    <form method="POST">
-        <div class="form-row">
-            <div class="form-group">
-                <label>Product</label>
-                <select name="product_id" required>
-                    <option value="">Select Product</option>
-                    {% for p in products %}
-                    <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>From Location</label>
-                <select name="from_location_id" required>
-                    <option value="">Select Source</option>
-                    {% for loc in locations %}
-                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>To Location</label>
-                <select name="to_location_id" required>
-                    <option value="">Select Destination</option>
-                    {% for loc in locations %}
-                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Quantity</label>
-                <input type="number" name="quantity" required min="1">
-            </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Transfer</button>
-    </form>
+
+<div class="page-header">
+  <div>
+    <h1>Internal Stock Transfers</h1>
+    <p>Relocate inventory between warehouse zones or facilities. Deducts source location and credits destination location with dual ledger entries.</p>
+  </div>
 </div>
-<div class="card">
-    <h2>Transfer History</h2>
-    {% if transfers %}
-    <table>
-        <thead><tr><th>ID</th><th>Product</th><th>From</th><th>To</th><th>Quantity</th><th>Date</th></tr></thead>
-        <tbody>
-            {% for t in transfers %}
-            <tr>
-                <td>#{{ t.id }}</td>
-                <td>{{ t.product.name if t.product else '-' }}</td>
-                <td>{{ t.from_location.name if t.from_location }}</td>
-                <td>{{ t.to_location.name if t.to_location }}</td>
-                <td>{{ t.quantity }}</td>
-                <td>{{ t.transferred_at.strftime('%Y-%m-%d %H:%M') if t.transferred_at }}</td>
-            </tr>
+
+<!-- New Transfer Form -->
+<div class="panel mb-4">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">New Transfer</div>
+      <div class="panel-subtitle">Move stock from one location or warehouse bin to another</div>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <form method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="product_id">Product to Transfer *</label>
+          <select id="product_id" name="product_id" required>
+            <option value="">Select Product...</option>
+            {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }}) — Total: {{ p.total_stock }} {{ p.uom }}</option>
             {% endfor %}
-        </tbody>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="from_location_id">From Location (Source) *</label>
+          <select id="from_location_id" name="from_location_id" required>
+            <option value="">Select Source Location...</option>
+            {% for loc in locations %}
+            <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="to_location_id">To Location (Destination) *</label>
+          <select id="to_location_id" name="to_location_id" required>
+            <option value="">Select Destination Location...</option>
+            {% for loc in locations %}
+            <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="max-width: 140px;">
+          <label for="quantity">Quantity *</label>
+          <input type="number" id="quantity" name="quantity" placeholder="Qty" required min="1">
+        </div>
+      </div>
+
+      <div class="d-flex ai-center gap-2" style="margin-top: .75rem;">
+        <button type="submit" class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+          Execute Transfer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Transfer History -->
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">Transfer History</div>
+      <div class="panel-subtitle">Audited record of internal stock movements across warehouse bins</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Transfer Ref</th>
+          <th>Product</th>
+          <th>Source Location</th>
+          <th>Destination Location</th>
+          <th>Quantity</th>
+          <th>Transfer Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transfers %}
+        <tr>
+          <td><span class="code-tag">TRF-{{ '%04d' % t.id }}</span></td>
+          <td class="fw-bold text-white">{{ t.product.name if t.product else '-' }}</td>
+          <td>
+            <span style="color: #fda4af;">{{ t.from_location.name if t.from_location else '-' }}</span>
+          </td>
+          <td>
+            <span style="color: #6ee7b7;">{{ t.to_location.name if t.to_location else '-' }}</span>
+          </td>
+          <td>
+            <span style="font-family: var(--mono); font-weight: 700; color: #fff;">{{ t.quantity }}</span>
+            <span style="font-size: .75rem; color: var(--text3);">{{ t.product.uom if t.product else '' }}</span>
+          </td>
+          <td style="font-size: .8rem; color: var(--text3);">
+            {{ t.transferred_at.strftime('%d %b %Y, %H:%M') if t.transferred_at else '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-6 text-muted">No transfers recorded yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-    {% else %}
-    <p>No transfers recorded yet.</p>
-    {% endif %}
+  </div>
 </div>
 {% endblock %}

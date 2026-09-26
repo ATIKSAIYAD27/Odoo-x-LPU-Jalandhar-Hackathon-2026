@@ -1,42 +1,82 @@
 {% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block breadcrumb %}Categories{% endblock %}
 {% block content %}
-<h2>Categories</h2>
-<div class="card">
-    <h2>Add Category</h2>
-    <form method="POST" action="{{ url_for('products.add_category') }}" style="display:flex;gap:10px;">
-        <input type="text" name="name" placeholder="Category name (e.g. Electronics)" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
-        <button type="submit" class="btn btn-primary">Add</button>
+
+<div class="page-header">
+  <div>
+    <h1>Product Categories</h1>
+    <p>Organize inventory by departments, product families, or handling requirements.</p>
+  </div>
+  <a href="{{ url_for('products.product_list') }}" class="btn btn-ghost">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    Back to Products
+  </a>
+</div>
+
+<!-- Add Category Card -->
+<div class="panel mb-4" style="max-width: 700px;">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">Add New Category</div>
+      <div class="panel-subtitle">Create a new group to classify catalog items</div>
+    </div>
+  </div>
+  <div class="panel-body">
+    <form method="POST" action="{{ url_for('products.add_category') }}" class="d-flex gap-2">
+      <input type="text" name="name" placeholder="Category name (e.g. Robotics, Raw Materials, Sensors)" required autocomplete="off" style="flex: 1;">
+      <button type="submit" class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Category
+      </button>
     </form>
+  </div>
 </div>
-<div class="card">
-    <h2>All Categories</h2>
-    <table>
-        <thead>
-            <tr><th>ID</th><th>Name</th><th>Products</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for cat in categories %}
-            <tr>
-                <td>{{ cat.id }}</td>
-                <td>{{ cat.name }}</td>
-                <td>{{ cat.products|length }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('products.edit_category', id=cat.id) }}" style="display:inline-flex;gap:5px;">
-                        <input type="text" name="name" value="{{ cat.name }}" required style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:200px;">
-                        <button type="submit" class="btn btn-sm btn-warning">Rename</button>
-                    </form>
-                    <a href="{{ url_for('products.delete_category', id=cat.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete category {{ cat.name }}?')">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+
+<!-- Categories List -->
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">All Categories</div>
+      <div class="panel-subtitle">{{ categories|length }} active classification categories</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th>Category Name</th>
+          <th>Assigned Products</th>
+          <th style="width: 320px;">Quick Rename & Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td><span class="code-tag">#{{ cat.id }}</span></td>
+          <td class="fw-bold text-white" style="font-size: .95rem;">{{ cat.name }}</td>
+          <td>
+            <span class="badge badge-ready">{{ cat.products|length }} products</span>
+          </td>
+          <td>
+            <div class="d-flex ai-center gap-2">
+              <form method="POST" action="{{ url_for('products.edit_category', id=cat.id) }}" class="d-flex gap-1" style="flex:1;">
+                <input type="text" name="name" value="{{ cat.name }}" required style="padding: .3rem .6rem; font-size: .82rem; height: 32px;">
+                <button type="submit" class="btn btn-amber btn-xs" style="height: 32px;">Rename</button>
+              </form>
+              <a href="{{ url_for('products.delete_category', id=cat.id) }}" class="btn btn-rose btn-xs" style="height: 32px;" onclick="return confirm('Delete category {{ cat.name }}?')">Delete</a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center py-6 text-muted">No categories created yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-    {% if not categories %}
-    <p style="margin-top:10px;color:#666">No categories yet. Add one above before creating products.</p>
-    {% endif %}
-</div>
-<div class="card">
-    <a href="{{ url_for('products.product_list') }}" class="btn btn-primary">Back to Products</a>
-    <a href="{{ url_for('settings.index') }}" class="btn btn-primary">Settings</a>
+  </div>
 </div>
 {% endblock %}

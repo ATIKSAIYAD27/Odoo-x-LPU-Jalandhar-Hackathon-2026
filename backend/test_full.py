@@ -72,6 +72,26 @@ with app.app_context(), app.test_client() as c:
     r = c.post("/login", data={"email": "new@x.com", "password": "newpass456"}, follow_redirects=True)
     check("Login after reset works", r.status_code == 200 and (b"Dashboard" in r.data or b"Quick Actions" in r.data))
 
+    # OTP email delivery path (Gmail SMTP stubbed — no network)
+    c.get("/logout", follow_redirects=True)
+    c.post("/signup", data={"name": "SMTP User", "email": "smtp@x.com", "password": "pass123", "role": "Warehouse Staff"}, follow_redirects=True)
+    import app.auth as auth_mod
+    orig_send = auth_mod.send_otp_email
+    sent = {}
+    def _fake_send(to, code):
+        sent["to"], sent["code"] = to, code
+        return True
+    auth_mod.send_otp_email = _fake_send
+    r = c.post("/forgot-password", data={"email": "smtp@x.com"}, follow_redirects=True)
+    check("OTP handed to SMTP sender", sent.get("to") == "smtp@x.com", f"got {sent}")
+    check("OTP-sent confirmation shown", b"OTP sent to" in r.data, r.data[:200])
+    check("Emailed OTP hidden from page", bool(sent.get("code")) and sent["code"].encode() not in r.data)
+    r = c.post("/reset-password", data={"email": "smtp@x.com", "otp": sent.get("code", ""), "password": "smtp456"}, follow_redirects=True)
+    check("Reset with emailed OTP works", b"Password reset successfully" in r.data)
+    r = c.post("/login", data={"email": "smtp@x.com", "password": "smtp456"}, follow_redirects=True)
+    check("Login after emailed-OTP reset works", b"Dashboard" in r.data or b"Quick Actions" in r.data)
+    auth_mod.send_otp_email = orig_send
+
     # ---------- Dashboard ----------
     r = c.get("/")
     check("Dashboard renders", r.status_code == 200)
@@ -84,6 +104,33 @@ with app.app_context(), app.test_client() as c:
     check("KPI pending_receipts counted", kpis["pending_receipts"] >= 2, f"got {kpis['pending_receipts']}")
     check("KPI pending_deliveries counted", kpis["pending_deliveries"] >= 2, f"got {kpis['pending_deliveries']}")
     check("KPI transfers counted", kpis["transfers_scheduled"] >= 1, f"got {kpis['transfers_scheduled']}")
+
+    # ---------- Dashboard dynamic filters ----------
+    r = c.get("/?doc_type=Receipt")
+    check("Dashboard doc-type filter (Receipts)", r.status_code == 200 and b"REC-" in r.data)
+    r = c.get("/?doc_type=Delivery")
+    check("Dashboard doc-type filter (Deliveries)", r.status_code == 200 and b"DEL-" in r.data)
+    r = c.get("/?doc_type=Transfer")
+    check("Dashboard doc-type filter (Transfers)", r.status_code == 200 and b"TRF-" in r.data)
+    r = c.get("/?doc_type=Adjustment")
+    check("Dashboard doc-type filter (Adjustments)", r.status_code == 200 and b"ADJ-" in r.data)
+    r = c.get("/?status=Pending")
+    check("Dashboard status filter (Pending)", r.status_code == 200 and b"REC-" in r.data and b"DEL-" in r.data)
+    r = c.get("/?status=Done")
+    check("Dashboard status filter (Done)", r.status_code == 200 and b"TRF-" in r.data)
+    wh1 = Warehouse.query.first()
+    r = c.get(f"/?warehouse_id={wh1.id}")
+    check("Dashboard warehouse filter renders", r.status_code == 200)
+    loc1 = Location.query.first()
+    r = c.get(f"/?location_id={loc1.id}")
+    check("Dashboard location filter renders", r.status_code == 200)
+    cat1 = Category.query.first()
+    r = c.get(f"/?category_id={cat1.id}")
+    check("Dashboard category filter renders", r.status_code == 200)
+    r = c.get("/?doc_type=Receipt&status=Done")
+    check("Dashboard combined filters render", r.status_code == 200)
+    r = c.get("/?warehouse_id=notanumber")
+    check("Dashboard invalid filter value handled", r.status_code == 200)
 
     # ---------- Categories (Inventory Manager required) ----------
     c.get("/logout", follow_redirects=True)
@@ -125,6 +172,30 @@ with app.app_context(), app.test_client() as c:
     tw = Product.query.filter_by(sku="TW-999").first()
     check("Product in DB", tw is not None)
 
+    # Add product with initial stock booked into a location
+    init_loc = Location.query.first()
+    r = c.post("/products/add", data={
+        "name": "Opening Stock Item", "sku": "OS-777", "category_id": str(cat.id),
+        "uom": "pcs", "reorder_level": "2", "initial_stock": "15",
+        "location_id": str(init_loc.id),
+    }, follow_redirects=True)
+    check("Add product with initial stock works", b"added successfully" in r.data)
+    os_prod = Product.query.filter_by(sku="OS-777").first()
+    os_stock = Stock.query.filter_by(product_id=os_prod.id, location_id=init_loc.id).first() if os_prod else None
+    check("Initial stock row created", os_stock is not None and os_stock.quantity == 15,
+          f"got {os_stock.quantity if os_stock else None}")
+    check("Initial stock ledger entry written", StockLedger.query.filter_by(reason="Initial Stock").count() == 1)
+    r = c.get("/move-history?reason=Initial%20Stock")
+    check("Move history shows initial stock", r.status_code == 200 and b"Opening Stock Item" in r.data)
+
+    # Initial stock > 0 without a location must be rejected
+    r = c.post("/products/add", data={
+        "name": "No Loc Item", "sku": "NL-778", "category_id": str(cat.id),
+        "uom": "pcs", "reorder_level": "2", "initial_stock": "5",
+    }, follow_redirects=True)
+    check("Initial stock without location rejected", b"stock location is required" in r.data)
+    check("Rejected product not created", Product.query.filter_by(sku="NL-778").first() is None)
+
     # Duplicate SKU
     r = c.post("/products/add", data={"name": "Another", "sku": "TW-999", "category_id": str(cat.id)}, follow_redirects=True)
     check("Duplicate SKU rejected", b"already used" in r.data)
@@ -155,7 +226,8 @@ with app.app_context(), app.test_client() as c:
 
     # ---------- Role-based access (Warehouse Staff restrictions) ----------
     c.get("/logout", follow_redirects=True)
-    c.post("/login", data={"email": "new@x.com", "password": "newpass456"})
+    r = c.post("/login", data={"email": "staff@stocksense.io", "password": "staff123"}, follow_redirects=True)
+    check("Staff login works", b"Dashboard" in r.data or b"Quick Actions" in r.data, r.data[:200])
     r = c.get("/products/add", follow_redirects=True)
     check("Staff blocked from creating product", b"Inventory Manager" in r.data)
     r = c.post("/categories/add", data={"name": "Staff Cat"}, follow_redirects=True)
@@ -166,6 +238,8 @@ with app.app_context(), app.test_client() as c:
     check("Staff warehouse not created", Warehouse.query.filter_by(name="Staff WH").first() is None)
     r = c.get("/products")
     check("Staff can still view products", r.status_code == 200 and b"Wireless Mouse" in r.data)
+    c.get("/logout", follow_redirects=True)
+    c.post("/login", data={"email": "new@x.com", "password": "newpass456"})
 
     # ---------- Receipts ----------
     r = c.get("/receipts")
@@ -385,7 +459,9 @@ with app.app_context(), app.test_client() as c:
     r = c.get("/move-history?reason=Transfer-out")
     check("Move history transfer filter works", r.status_code == 200)
 
-    # ---------- Settings ----------
+    # ---------- Settings (Inventory Manager required) ----------
+    c.get("/logout", follow_redirects=True)
+    c.post("/login", data={"email": "manager@stocksense.io", "password": "manager123"})
     r = c.get("/settings")
     check("Settings renders", r.status_code == 200 and b"Warehouses" in r.data)
     r = c.post("/warehouses/add", data={"name": "Test WH"}, follow_redirects=True)
@@ -420,6 +496,8 @@ with app.app_context(), app.test_client() as c:
     check("Delete warehouse with locations blocked", b"Cannot delete" in r.data)
 
     # ---------- Profile ----------
+    c.get("/logout", follow_redirects=True)
+    c.post("/login", data={"email": "new@x.com", "password": "newpass456"})
     r = c.get("/profile")
     check("Profile renders", r.status_code == 200 and b"Profile" in r.data)
     r = c.post("/profile/edit", data={"name": "Renamed User"}, follow_redirects=True)

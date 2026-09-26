@@ -37,7 +37,17 @@ function makeLabelTexture(text: string, sub?: string) {
   if (!ctx) return canvas;
   ctx.clearRect(0, 0, 256, 96);
   ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
-  ctx.roundRect(8, 12, 240, 72, 12);
+  ctx.beginPath();
+  ctx.moveTo(20, 12);
+  ctx.lineTo(236, 12);
+  ctx.quadraticCurveTo(248, 12, 248, 24);
+  ctx.lineTo(248, 72);
+  ctx.quadraticCurveTo(248, 84, 236, 84);
+  ctx.lineTo(20, 84);
+  ctx.quadraticCurveTo(8, 84, 8, 72);
+  ctx.lineTo(8, 24);
+  ctx.quadraticCurveTo(8, 12, 20, 12);
+  ctx.closePath();
   ctx.fill();
   ctx.fillStyle = '#e2e8f0';
   ctx.font = 'bold 22px Plus Jakarta Sans, sans-serif';

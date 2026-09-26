@@ -60,23 +60,16 @@ export const SpatialStudioView: React.FC<SpatialStudioViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Meshio 3D Editor Top Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl meshio-glass card-3d border border-indigo-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded-md bg-indigo-100 border border-indigo-200 text-[10px] font-mono font-bold text-indigo-700 uppercase tracking-widest">
-              MeshIO · 3D Spatial Editor
-            </span>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs text-slate-500 font-mono">Digital Twin Engine v3.8</span>
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+            Live warehouse twin
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-            <span>Spatial Warehouse Digital Twin</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-mono border border-emerald-200">
-              LIVE 3D
-            </span>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+            3D facility view
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-xl">
-            Interactive real-time 3D simulation of pallet racks, autonomous AGVs, storage slotting, and physical bin capacities.
+          <p className="text-sm text-slate-500 mt-1 max-w-xl">
+            Racks, bins, and crate fill update from receipts, deliveries, transfers, and cycle counts.
           </p>
         </div>
 

@@ -13,7 +13,8 @@ import {
   LogOut,
   UserCheck,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -21,14 +22,17 @@ interface HeaderProps {
   activeTab: string;
   onNavigate: (tab: string) => void;
   onOpenQuickModal: (type: 'receipt' | 'delivery' | 'transfer' | 'adjustment') => void;
+  onSkuSearch?: (query: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentUser,
   activeTab,
   onNavigate,
-  onOpenQuickModal
+  onOpenQuickModal,
+  onSkuSearch
 }) => {
+  const [skuQuery, setSkuQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -60,148 +64,46 @@ export const Header: React.FC<HeaderProps> = ({
   const isManager = isAdmin || currentUser?.role === 'manager';
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3 transition-colors">
-      <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
-        {/* Zone 1: Single text element wordmark with 3D icon */}
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 w-full bg-white border-b border-slate-200/90 px-4 lg:px-6 py-2.5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => onNavigate(isAdmin ? 'admin_users' : isManager ? 'manager_dashboard' : 'staff_dashboard')}
-            className="flex items-center gap-2.5 text-left group"
+            className="flex items-center gap-2.5 text-left group shrink-0"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform flex items-center justify-center">
-              <div className="w-full h-full bg-white/80 rounded-[10px] flex items-center justify-center">
-                <Box className="w-5 h-5 text-indigo-400" />
-              </div>
+            <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center shadow-sm">
+              <Box className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <span className="text-lg font-bold tracking-tight text-slate-800 group-hover:text-indigo-700 transition-colors">
+            <div className="hidden sm:block">
+              <span className="text-[15px] font-semibold tracking-tight text-slate-900">
                 StockSense
               </span>
-              <span className="text-[11px] font-mono text-indigo-400 block -mt-1 tracking-wider uppercase">
-                {isAdmin ? 'Admin Console' : isManager ? 'Manager Console' : 'Warehouse Crew'}
+              <span className="text-[10px] text-slate-500 block -mt-0.5 tracking-wide">
+                {isAdmin ? 'Administrator' : isManager ? 'Inventory Manager' : 'Warehouse Staff'}
               </span>
             </div>
           </button>
-        </div>
 
-        {/* Zone 2: Clean navigation links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-          <button
-            onClick={() => onNavigate('spatial_studio')}
-            className={`flex items-center gap-1.5 transition-colors hover:text-slate-800 ${
-              activeTab === 'spatial_studio' ? 'text-cyan-400 font-bold' : 'text-slate-600'
-            }`}
-          >
-            <span>3D Studio</span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 font-mono">MeshIO</span>
-          </button>
-
-          {isManager ? (
-            <>
-              <button
-                onClick={() => onNavigate('manager_dashboard')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'manager_dashboard' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => onNavigate('products')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'products' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Products
-              </button>
-              <button
-                onClick={() => onNavigate('operations')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'operations' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Operations
-              </button>
-              <button
-                onClick={() => onNavigate('ledger')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'ledger' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Stock Ledger
-              </button>
-              <button
-                onClick={() => onNavigate('warehouses')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'warehouses' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Warehouses
-              </button>
-              <button
-                onClick={() => onNavigate('analytics')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'analytics' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Analytics
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => onNavigate('admin_users')}
-                  className={`transition-colors hover:text-slate-800 ${
-                    activeTab === 'admin_users' ? 'text-purple-500 font-semibold' : 'text-purple-500/80'
-                  }`}
-                >
-                  Users & Access
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => onNavigate('staff_dashboard')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'staff_dashboard' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Warehouse Ops
-              </button>
-              <button
-                onClick={() => onNavigate('staff_receipts')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'staff_receipts' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Receive Goods
-              </button>
-              <button
-                onClick={() => onNavigate('staff_deliveries')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'staff_deliveries' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Pick & Pack
-              </button>
-              <button
-                onClick={() => onNavigate('staff_transfers')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'staff_transfers' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Internal Moves
-              </button>
-              <button
-                onClick={() => onNavigate('staff_counting')}
-                className={`transition-colors hover:text-slate-800 ${
-                  activeTab === 'staff_counting' ? 'text-indigo-400 font-semibold' : 'text-slate-600'
-                }`}
-              >
-                Stock Counting
-              </button>
-            </>
+          {isManager && (
+            <form
+              className="hidden md:flex items-center flex-1 max-w-md ml-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSkuSearch?.(skuQuery.trim());
+              }}
+            >
+              <div className="relative w-full">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  value={skuQuery}
+                  onChange={(e) => setSkuQuery(e.target.value)}
+                  placeholder="Search SKU, product, or bin..."
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+            </form>
           )}
-        </nav>
+        </div>
 
         {/* Zone 3: 1-2 primary actions */}
         <div className="flex items-center gap-3">
@@ -246,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowQuickMenu(!showQuickMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-lg transition-colors shadow-md shadow-indigo-600/20 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span>Quick Action</span>

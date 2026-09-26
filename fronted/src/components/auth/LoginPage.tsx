@@ -4,9 +4,8 @@ import { toastService } from '../../services/toastService';
 import { User, UserRole, Warehouse } from '../../types/inventory';
 import {
   Lock, Mail, User as UserIcon, Shield, Truck, ArrowRight,
-  KeyRound, CheckCircle2, X, Building2, Brain, Sparkles,
-  Orbit, Cpu, Zap, Eye, EyeOff, Fingerprint, Wifi, Activity,
-  LockKeyhole, Globe, Clock, TrendingUp, ArrowUpRight, Bot
+  KeyRound, CheckCircle2, Building2, Box,
+  Eye, EyeOff, Fingerprint, Wifi, Clock, TrendingUp, ArrowUpRight
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -244,85 +243,56 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex overflow-hidden" ref={containerRef}>
-      {/* Particle Canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
-
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 z-[1] bg-[#0a0e1a]" />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-br from-indigo-950/80 via-slate-900/70 to-slate-950/80" />
-
-      {/* Animated Mesh Orbs */}
-      <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
-        <div className="login-mesh-orb login-mesh-orb-1" style={{ animationDelay: '0s' }} />
-        <div className="login-mesh-orb login-mesh-orb-2" style={{ animationDelay: '-7s', animationDuration: '25s' }} />
-        <div className="login-mesh-orb login-mesh-orb-3" style={{ animationDelay: '-14s', animationDuration: '30s' }} />
-        <div className="login-mesh-orb login-mesh-orb-4" style={{ animationDelay: '-3s', animationDuration: '22s' }} />
+    <div className="fixed inset-0 z-50 flex bg-slate-50 overflow-hidden" ref={containerRef}>
+      <div className="hidden lg:flex relative w-[46%] bg-slate-950 text-white flex-col justify-between p-10 overflow-hidden">
+        <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/80" />
+        <div className="iso-scene pointer-events-none" aria-hidden>
+          <div className="iso-warehouse">
+            <div className="iso-floor" />
+            <div className="iso-rack iso-rack-a" />
+            <div className="iso-rack iso-rack-b" />
+            <div className="iso-crate iso-crate-1" />
+            <div className="iso-crate iso-crate-2" />
+            <div className="iso-crate iso-crate-3" />
+            <div className="iso-agv" />
+          </div>
+        </div>
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-300">
+            <Box className="w-5 h-5" />
+            StockSense
+          </div>
+          <h1 className="mt-8 text-4xl font-semibold tracking-tight leading-tight">
+            Inventory operations in one live view
+          </h1>
+          <p className="mt-3 text-slate-400 max-w-md text-sm leading-relaxed">
+            Managers control incoming and outgoing stock. Warehouse staff receive, pick, transfer, and count — with every move in the ledger.
+          </p>
+        </div>
+        <div className="relative z-10 grid grid-cols-2 gap-3">
+          {[
+            { label: 'Products in stock', hint: 'SKU availability' },
+            { label: 'Low / out of stock', hint: 'Reorder alerts' },
+            { label: 'Pending receipts', hint: 'Inbound goods' },
+            { label: 'Deliveries & transfers', hint: 'Outbound & internal' }
+          ].map(card => (
+            <div key={card.label} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="text-xs font-medium text-white">{card.label}</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">{card.hint}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Floating Morphing Shapes */}
-      <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
-        <div className="login-morph-shape login-float-shape login-badge-float"
-             style={{ top: '12%', left: '8%', width: '160px', height: '160px', border: '2px solid rgba(99,102,241,0.15)', background: 'rgba(99,102,241,0.03)' }} />
-        <div className="login-morph-shape login-float-shape login-badge-float-2"
-             style={{ top: '25%', right: '12%', width: '120px', height: '120px', border: '2px solid rgba(56,189,248,0.12)', background: 'rgba(56,189,248,0.03)', borderRadius: '40% 60% 70% 30%' }} />
-        <div className="login-morph-shape login-float-shape login-badge-float-3"
-             style={{ bottom: '15%', left: '15%', width: '140px', height: '140px', border: '2px solid rgba(16,185,129,0.1)', background: 'rgba(16,185,129,0.03)', borderRadius: '60% 40% 30% 70%' }} />
-        <div className="login-morph-shape login-float-shape"
-             style={{ bottom: '25%', right: '8%', width: '100px', height: '100px', border: '2px solid rgba(236,72,153,0.08)', background: 'rgba(236,72,153,0.03)', borderRadius: '50%' }} />
-        <div className="login-float-shape"
-             style={{ top: '45%', left: '3%', width: '60px', height: '60px', border: '1px solid rgba(245,158,11,0.1)', background: 'rgba(245,158,11,0.02)', borderRadius: '4px', animationDuration: '10s' }} />
-        <div className="login-float-shape"
-             style={{ top: '8%', right: '30%', width: '80px', height: '80px', border: '1px solid rgba(168,85,247,0.08)', background: 'rgba(168,85,247,0.02)', borderRadius: '30% 70%', animationDuration: '12s' }} />
-      </div>
-
-      {/* Animated Grid Background */}
-      <div className="absolute inset-0 z-[2] login-grid-bg opacity-30 pointer-events-none" />
-
-      {/* Shimmer accent lines */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] z-[3] bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] z-[3] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
-
-      {/* Main Content */}
-      <div className="relative z-[10] w-full flex items-center justify-center p-4 md:p-8 min-h-screen">
-        <div className="w-full max-w-lg">
-          {/* Logo & Hero Section */}
-          <div className="text-center mb-8 login-card-enter" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-            <div className="relative inline-flex items-center justify-center mb-4">
-              <div className="absolute w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500/20 via-cyan-400/10 to-emerald-400/10 blur-2xl login-hero-orb" />
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-[2px] shadow-2xl shadow-indigo-600/25 relative login-glow-card">
-                <div className="w-full h-full bg-slate-950/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Brain className="w-10 h-10 text-indigo-300" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-950 flex items-center justify-center data-live-dot">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                </div>
-                <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-cyan-400 rounded-full border-2 border-slate-950 flex items-center justify-center">
-                  <div className="w-1 h-1 bg-white rounded-full" />
-                </div>
-              </div>
-            </div>
-            <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2 stat-animate">
-              StockSense
-            </h1>
-            <p className="text-sm text-slate-400 font-medium mb-1 stat-animate" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-              AI-Powered <span className="login-shimmer-text font-bold">3D Inventory Intelligence</span>
-            </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-300 stat-animate" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 data-live-dot" />
-              System Online · v3.8
-            </div>
+      <div className="relative z-10 flex-1 overflow-y-auto flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden text-center mb-6">
+            <h1 className="text-2xl font-semibold text-slate-900">StockSense</h1>
+            <p className="text-sm text-slate-500">Sign in to the inventory workspace</p>
           </div>
 
-          {/* Auth Card */}
-          <div className="login-glass-card login-glow-card rounded-3xl shadow-2xl shadow-indigo-900/20 p-8 relative overflow-hidden login-card-enter" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-            {/* Animated gradient accent line */}
-            <div className="absolute top-0 left-0 right-0 h-[3px] overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite]" />
-            </div>
-
-            {/* Subtle inner glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent blur-xl" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7">
 
             {/* Tab Navigation */}
             <div className="flex items-center justify-center gap-1 mb-8 relative">

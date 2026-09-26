@@ -208,11 +208,11 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Live Enterprise Telemetry
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Inventory Executive Command
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+            Inventory dashboard
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-xl">
-            Real-time synchronization across {warehouses.length} regional distribution centers. Automated ledger tracking with dynamic reorder alerting.
+          <p className="text-sm text-slate-500 mt-1 max-w-xl">
+            Stock, receipts, deliveries, and transfers across {warehouses.length} warehouses.
           </p>
         </div>
 
@@ -349,7 +349,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
               }`}
             >
               <Orbit className="w-3.5 h-3.5 text-cyan-300" />
-              <span>MeshIO 3D Spatial Twin</span>
+              <span>3D warehouse</span>
             </button>
             <button
               onClick={() => setActiveViewMode('analytics')}

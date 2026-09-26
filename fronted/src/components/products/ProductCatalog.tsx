@@ -21,6 +21,7 @@ import {
 
 interface ProductCatalogProps {
   currentUser: User | null;
+  initialSearch?: string;
   onOpenCreateProduct: () => void;
   onOpenEditProduct: (product: Product) => void;
   onOpenReceipt: (productId: string) => void;
@@ -30,6 +31,7 @@ interface ProductCatalogProps {
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   currentUser,
+  initialSearch = '',
   onOpenCreateProduct,
   onOpenEditProduct,
   onOpenReceipt,
@@ -41,7 +43,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   const [categories, setCategories] = useState<Category[]>(inventoryStore.getCategories());
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+  useEffect(() => {
+    if (initialSearch) setSearchQuery(initialSearch);
+  }, [initialSearch]);
   const [selectedWarehouse, setSelectedWarehouse] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');

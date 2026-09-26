@@ -131,7 +131,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-indigo-200 selection:text-indigo-900">
+    <div className="h-screen bg-[#eef1f6] text-slate-800 flex flex-col font-sans overflow-hidden selection:bg-indigo-200 selection:text-indigo-900">
       {!currentUser ? (
         <LoginPage onAuthSuccess={(user) => {
           if (user.role === 'admin') setActiveTab('admin_users');
@@ -140,17 +140,18 @@ export default function App() {
         }} />
       ) : (
         <>
-          {/* Top Header */}
           <Header
             currentUser={currentUser}
             activeTab={activeTab}
             onNavigate={(tab) => setActiveTab(tab)}
             onOpenQuickModal={handleQuickModal}
+            onSkuSearch={(q) => {
+              setCatalogSearch(q);
+              setActiveTab('products');
+            }}
           />
 
-          {/* Main Container: Sidebar + Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Role-Based Sidebar */}
+          <div className="flex-1 flex min-h-0 overflow-hidden">
             <Sidebar
               currentUser={currentUser}
               activeTab={activeTab}
@@ -159,8 +160,8 @@ export default function App() {
               onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
             />
 
-            {/* Dynamic View Content Viewport */}
-            <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 perspective-1000 max-w-7xl mx-auto w-full">
+            <main className="flex-1 overflow-y-auto">
+              <div className="px-4 md:px-7 py-5 lg:px-8 max-w-[1600px] mx-auto w-full">
               {/* ================= DEDICATED 3D SPATIAL STUDIO ================= */}
               {activeTab === 'spatial_studio' && (
                 <SpatialStudioView
@@ -185,6 +186,7 @@ export default function App() {
               {activeTab === 'products' && (
                 <ProductCatalog
                   currentUser={currentUser}
+                  initialSearch={catalogSearch}
                   onOpenCreateProduct={handleOpenCreateProduct}
                   onOpenEditProduct={handleOpenEditProduct}
                   onOpenReceipt={handleOpenReceiptModal}
@@ -272,6 +274,7 @@ export default function App() {
               )}
 
               {activeTab === 'staff_history' && <StockLedgerView />}
+              </div>
             </main>
           </div>
 

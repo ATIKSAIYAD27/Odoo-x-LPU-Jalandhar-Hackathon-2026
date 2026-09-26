@@ -38,22 +38,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isAdmin = currentUser?.role === 'admin';
   const isManager = isAdmin || currentUser?.role === 'manager';
+  const item = (tab: string) =>
+    `w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+      activeTab === tab ? 'bg-white/12 text-white' : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+    }`;
 
   return (
     <aside
-      className={`relative flex flex-col bg-white/95 border-r border-slate-200 transition-all duration-300 z-30 shrink-0 ${
-        collapsed ? 'w-18' : 'w-64'
+      className={`relative flex flex-col bg-slate-950 text-slate-300 transition-all duration-300 z-30 shrink-0 ${
+        collapsed ? 'w-[72px]' : 'w-[248px]'
       }`}
     >
       {/* Role Pill Banner */}
-      <div className="p-3 border-b border-slate-200">
+      <div className="p-3 border-b border-white/10">
         <div
-          className={`flex items-center gap-2 p-2 rounded-xl transition-colors ${
+          className={`flex items-center gap-2 p-2 rounded-lg ${
             isAdmin
-              ? 'bg-purple-50 border border-purple-200 text-purple-600'
+              ? 'bg-violet-500/15 text-violet-200'
               : isManager
-              ? 'bg-indigo-50 border border-indigo-200 text-indigo-600'
-              : 'bg-amber-50 border border-amber-200 text-amber-600'
+              ? 'bg-indigo-500/15 text-indigo-200'
+              : 'bg-amber-500/15 text-amber-200'
           }`}
         >
           {isAdmin ? (
@@ -68,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="text-xs font-bold uppercase tracking-wider leading-tight">
                 {isAdmin ? 'Platform Admin' : isManager ? 'Inventory Manager' : 'Warehouse Staff'}
               </div>
-              <div className="text-[10px] text-slate-600 truncate">
+              <div className="text-[10px] text-slate-400 truncate">
                 {currentUser?.warehouseName || 'Global Operations'}
               </div>
             </div>
@@ -83,36 +87,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div>
               {!collapsed && (
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2.5 mb-2">
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-2.5 mb-2">
                   Management Center
                 </div>
               )}
               <div className="space-y-1">
                 <button
                   onClick={() => onNavigate('spatial_studio')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'spatial_studio'
-                      ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-slate-800 shadow-md shadow-indigo-600/30'
-                      : 'text-indigo-600 hover:text-slate-800 hover:bg-slate-100 border border-indigo-200'
-                  }`}
-                  title="MeshIO 3D Spatial Studio"
+                  className={item('spatial_studio')}
+                  title="3D warehouse twin"
                 >
                   <Orbit className="w-4 h-4 shrink-0 text-cyan-400" />
                   {!collapsed && (
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <span>3D Spatial Studio</span>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-cyan-400/20 text-cyan-700 rounded font-mono">3D</span>
+                    <span className="flex items-center gap-1.5">
+                      <span>3D Warehouse Twin</span>
+                      <span className="text-[9px] px-1.5 py-0.5 bg-cyan-400/15 text-cyan-300 rounded">LIVE</span>
                     </span>
                   )}
                 </button>
 
                 <button
                   onClick={() => onNavigate('manager_dashboard')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'manager_dashboard'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
+                  className={item('manager_dashboard')}
                   title="Manager Dashboard"
                 >
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -121,98 +117,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 <button
                   onClick={() => onNavigate('products')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'products'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
+                  className={item('products')}
                   title="Product Catalog & Rules"
                 >
                   <Boxes className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Product Catalog & SKUs</span>}
+                  {!collapsed && <span>Products & SKUs</span>}
                 </button>
               </div>
             </div>
 
             <div>
               {!collapsed && (
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2.5 mb-2">
-                  Stock Operations
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-2.5 mb-2">
+                  Operations
                 </div>
               )}
               <div className="space-y-1">
-                <button
-                  onClick={() => onNavigate('operations')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'operations'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="All Operations"
-                >
+                <button onClick={() => onNavigate('operations')} className={item('operations')} title="All Operations">
                   <ArrowRightLeft className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Operations Hub</span>}
+                  {!collapsed && <span>Receipts & Deliveries</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('ledger')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'ledger'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Complete Stock Ledger"
-                >
+                <button onClick={() => onNavigate('ledger')} className={item('ledger')} title="Complete Stock Ledger">
                   <ClipboardList className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Complete Stock Ledger</span>}
+                  {!collapsed && <span>Stock Ledger</span>}
                 </button>
               </div>
             </div>
 
             <div>
               {!collapsed && (
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2.5 mb-2">
-                  Facilities & Reports
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-2.5 mb-2">
+                  Facilities
                 </div>
               )}
               <div className="space-y-1">
-                <button
-                  onClick={() => onNavigate('warehouses')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'warehouses'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Warehouses & Bin Racks"
-                >
+                <button onClick={() => onNavigate('warehouses')} className={item('warehouses')} title="Warehouses">
                   <Building2 className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Warehouses & Locations</span>}
+                  {!collapsed && <span>Warehouses</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('analytics')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'analytics'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Movement & Valuation Analytics"
-                >
+                <button onClick={() => onNavigate('analytics')} className={item('analytics')} title="Analytics">
                   <BarChart3 className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Analytics & Valuation</span>}
+                  {!collapsed && <span>Analytics</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('settings')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'settings'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="System & Reorder Settings"
-                >
+                <button onClick={() => onNavigate('settings')} className={item('settings')} title="Profile & settings">
                   <Settings className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Settings & Rules</span>}
+                  {!collapsed && <span>Profile & Settings</span>}
                 </button>
               </div>
             </div>
@@ -220,149 +169,65 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {isAdmin && (
               <div>
                 {!collapsed && (
-                  <div className="text-[10px] font-bold text-purple-600 uppercase tracking-widest px-2.5 mb-2">
+                  <div className="text-[10px] font-semibold text-violet-300 uppercase tracking-widest px-2.5 mb-2">
                     Administration
                   </div>
                 )}
-                <div className="space-y-1">
-                  <button
-                    onClick={() => onNavigate('admin_users')}
-                    className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      activeTab === 'admin_users'
-                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
-                        : 'text-purple-600 hover:text-slate-800 hover:bg-slate-100 border border-purple-200'
-                    }`}
-                    title="Users, Access & Activity Control"
-                  >
-                    <Users className="w-4 h-4 shrink-0" />
-                    {!collapsed && (
-                      <span className="flex items-center gap-1.5 font-bold">
-                        <span>Users & Access</span>
-                        <span className="text-[9px] px-1.5 py-0.2 bg-purple-400/20 text-purple-700 rounded font-mono">ADMIN</span>
-                      </span>
-                    )}
-                  </button>
-                </div>
+                <button onClick={() => onNavigate('admin_users')} className={item('admin_users')} title="Users & Access">
+                  <Users className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span>Users & Access</span>}
+                </button>
               </div>
             )}
           </>
         ) : (
-          /* ======================== WAREHOUSE STAFF NAVIGATION ======================== */
           <>
             <div>
               {!collapsed && (
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2.5 mb-2">
-                  Floor Operations
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-2.5 mb-2">
+                  Floor operations
                 </div>
               )}
               <div className="space-y-1">
-                <button
-                  onClick={() => onNavigate('spatial_studio')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'spatial_studio'
-                      ? 'bg-gradient-to-r from-amber-600 to-cyan-600 text-slate-800 shadow-md shadow-amber-600/30'
-                      : 'text-amber-600 hover:text-slate-800 hover:bg-slate-100 border border-amber-200'
-                  }`}
-                  title="MeshIO 3D Spatial Studio"
-                >
+                <button onClick={() => onNavigate('spatial_studio')} className={item('spatial_studio')} title="3D floor">
                   <Orbit className="w-4 h-4 shrink-0 text-cyan-400" />
-                  {!collapsed && (
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <span>3D Floor Model</span>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-amber-400/20 text-amber-600 rounded font-mono">3D</span>
-                    </span>
-                  )}
+                  {!collapsed && <span>3D Floor Model</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_dashboard')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_dashboard'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Staff Operational Dashboard"
-                >
+                <button onClick={() => onNavigate('staff_dashboard')} className={item('staff_dashboard')} title="Staff dashboard">
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
                   {!collapsed && <span>Staff Dashboard</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_receipts')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_receipts'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Receive Inbound Goods"
-                >
+                <button onClick={() => onNavigate('staff_receipts')} className={item('staff_receipts')} title="Receive goods">
                   <ArrowDownToLine className="w-4 h-4 shrink-0" />
                   {!collapsed && <span>Receive Goods</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_deliveries')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_deliveries'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Pick & Pack Delivery Orders"
-                >
+                <button onClick={() => onNavigate('staff_deliveries')} className={item('staff_deliveries')} title="Pick & pack">
                   <ArrowUpFromLine className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Pick & Pack Orders</span>}
+                  {!collapsed && <span>Pick & Pack</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_transfers')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_transfers'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Perform Internal Transfers"
-                >
+                <button onClick={() => onNavigate('staff_transfers')} className={item('staff_transfers')} title="Internal transfers">
                   <ArrowRightLeft className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>Internal Bin Moves</span>}
+                  {!collapsed && <span>Internal Transfers</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_counting')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_counting'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Physical Stock Counting"
-                >
+                <button onClick={() => onNavigate('staff_counting')} className={item('staff_counting')} title="Stock counting">
                   <SlidersHorizontal className="w-4 h-4 shrink-0" />
                   {!collapsed && <span>Stock Counting</span>}
                 </button>
-
-                <button
-                  onClick={() => onNavigate('staff_history')}
-                  className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'staff_history'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                  }`}
-                  title="Recent Move History"
-                >
+                <button onClick={() => onNavigate('staff_history')} className={item('staff_history')} title="Move history">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   {!collapsed && <span>Move History</span>}
                 </button>
               </div>
             </div>
 
-            {/* Warehouse Staff Restrictions Notice */}
             {!collapsed && (
-              <div className="p-3 rounded-xl bg-white/60 border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                <div className="font-semibold text-slate-600 flex items-center gap-1.5">
+              <div className="p-3 rounded-lg bg-white/5 text-[11px] text-slate-400 space-y-1">
+                <div className="font-medium text-slate-300 flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-amber-400" />
-                  Role Restrictions Active
+                  Staff scope
                 </div>
-                <p className="text-[10px] text-slate-600 leading-tight">
-                  Staff access is scoped to floor operations. Configuration & deletion locked.
+                <p className="text-[10px] leading-tight">
+                  Floor operations only. Catalog configuration is locked.
                 </p>
               </div>
             )}
@@ -370,17 +235,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Collapse Toggle Footer */}
-      <div className="p-3 border-t border-slate-200 flex items-center justify-between">
+      <div className="p-3 border-t border-white/10 flex items-center justify-between">
         {!collapsed && (
-          <div className="flex items-center gap-2 text-[11px] text-slate-600 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>ERP REST v2.4</span>
+          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Live inventory</span>
           </div>
         )}
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors ml-auto"
+          className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors ml-auto"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}

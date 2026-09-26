@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Internal Transfers</h2>
+<div class="card">
+    <h2>New Transfer</h2>
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Product</label>
+                <select name="product_id" required>
+                    <option value="">Select Product</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>From Location</label>
+                <select name="from_location_id" required>
+                    <option value="">Select Source</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>To Location</label>
+                <select name="to_location_id" required>
+                    <option value="">Select Destination</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" name="quantity" required min="1">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Transfer</button>
+    </form>
+</div>
+<div class="card">
+    <h2>Transfer History</h2>
+    {% if transfers %}
+    <table>
+        <thead><tr><th>ID</th><th>Product</th><th>From</th><th>To</th><th>Quantity</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for t in transfers %}
+            <tr>
+                <td>#{{ t.id }}</td>
+                <td>{{ t.product.name if t.product else '-' }}</td>
+                <td>{{ t.from_location.name if t.from_location }}</td>
+                <td>{{ t.to_location.name if t.to_location }}</td>
+                <td>{{ t.quantity }}</td>
+                <td>{{ t.transferred_at.strftime('%Y-%m-%d %H:%M') if t.transferred_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No transfers recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

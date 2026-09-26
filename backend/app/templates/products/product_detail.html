@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ product.name }}</h2>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="number">{{ product.total_stock }}</div>
+        <div class="label">Total Stock</div>
+    </div>
+    <div class="kpi-card {{ 'low' if product.total_stock > 0 and product.total_stock <= product.reorder_level else ('out' if product.total_stock <= 0 else '') }}">
+        <div class="number">{{ product.total_stock }}</div>
+        <div class="label">Stock Status</div>
+    </div>
+</div>
+<div class="card">
+    <h2>Stock by Location</h2>
+    <table>
+        <thead><tr><th>Location</th><th>Warehouse</th><th>Quantity</th></tr></thead>
+        <tbody>
+            {% for s in stocks %}
+            <tr>
+                <td>{{ s.location.name }}</td>
+                <td>{{ s.location.warehouse.name }}</td>
+                <td>{{ s.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="card">
+    <a href="{{ url_for('products.product_list') }}" class="btn btn-primary">Back to Products</a>
+</div>
+{% endblock %}

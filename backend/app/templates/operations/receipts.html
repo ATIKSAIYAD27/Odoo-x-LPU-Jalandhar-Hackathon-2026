@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Receipts</h2>
+<div class="card">
+    <form method="GET" style="display:flex;gap:15px;align-items:flex-end;">
+        <div class="form-group">
+            <label>Filter by Status</label>
+            <select name="status" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="Pending" {{ 'selected' if status_filter == 'Pending' }}>Pending</option>
+                <option value="Draft" {{ 'selected' if status_filter == 'Draft' }}>Draft</option>
+                <option value="Waiting" {{ 'selected' if status_filter == 'Waiting' }}>Waiting</option>
+                <option value="Ready" {{ 'selected' if status_filter == 'Ready' }}>Ready</option>
+                <option value="Done" {{ 'selected' if status_filter == 'Done' }}>Done</option>
+                <option value="Canceled" {{ 'selected' if status_filter == 'Canceled' }}>Canceled</option>
+            </select>
+        </div>
+    </form>
+</div>
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h2 style="margin:0">Receipt List</h2>
+        <a href="{{ url_for('operations.add_receipt') }}" class="btn btn-primary">+ New Receipt</a>
+    </div>
+    <table>
+        <thead><tr><th>ID</th><th>Supplier</th><th>Destination</th><th>Status</th><th>Lines</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in receipts %}
+            <tr>
+                <td>#{{ r.id }}</td>
+                <td>{{ r.supplier }}</td>
+                <td>{{ r.destination_location.name }}</td>
+                <td><span class="badge badge-{{ r.status|lower }}">{{ r.status }}</span></td>
+                <td>{{ r.lines|length }}</td>
+                <td>{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '-' }}</td>
+                <td class="action-links">
+                    {% if r.status != 'Done' and r.status != 'Canceled' %}
+                    <a href="{{ url_for('operations.validate_receipt', id=r.id) }}" class="btn btn-sm btn-success" onclick="return confirm('Validate receipt #{{ r.id }}?')">Validate</a>
+                    <a href="{{ url_for('operations.cancel_receipt', id=r.id) }}" class="btn btn-sm btn-danger">Cancel</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

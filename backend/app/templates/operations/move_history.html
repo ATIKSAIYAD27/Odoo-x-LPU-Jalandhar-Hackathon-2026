@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Move History</h2>
+<div class="card">
+    <form method="GET" style="display:flex;gap:15px;align-items:flex-end;">
+        <div class="form-group">
+            <label>Filter by Reason</label>
+            <select name="reason" onchange="this.form.submit()">
+                <option value="">All Reasons</option>
+                {% for r in reasons %}
+                <option value="{{ r }}" {{ 'selected' if reason_filter == r }}>{{ r }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+<div class="card">
+    <table>
+        <thead><tr><th>ID</th><th>Product</th><th>Location</th><th>Change</th><th>Reason</th><th>Reference</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for l in ledgers %}
+            <tr>
+                <td>#{{ l.id }}</td>
+                <td>{{ l.product.name if l.product else '-' }}</td>
+                <td>{{ l.location.name if l.location }}</td>
+                <td style="color:{{ 'green' if l.change > 0 else 'red' }}">{{ l.change }}</td>
+                <td><span class="badge badge-{{ l.reason|lower }}">{{ l.reason }}</span></td>
+                <td>{{ l.reference }}</td>
+                <td>{{ l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not ledgers %}
+    <p>No ledger entries found.</p>
+    {% endif %}
+</div>
+{% endblock %}

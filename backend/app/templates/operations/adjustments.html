@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Stock Adjustment</h2>
+<div class="card">
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Product</label>
+                <select name="product_id" required>
+                    <option value="">Select Product</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <select name="location_id" required>
+                    <option value="">Select Location</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Counted Quantity</label>
+                <input type="number" name="counted_quantity" required min="0">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Record Adjustment</button>
+        <a href="{{ url_for('operations.adjustments') }}" class="btn btn-danger">Cancel</a>
+    </form>
+</div>
+<div class="card">
+    <h2>Stock Ledger (Move History)</h2>
+    <table>
+        <thead><tr><th>Product</th><th>Location</th><th>Change</th><th>Reason</th><th>Reference</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for l in ledgers|reverse %}
+            <tr>
+                <td>{{ l.product.name if l.product else '-' }}</td>
+                <td>{{ l.location.name if l.location }}</td>
+                <td>{{ l.change }}</td>
+                <td>{{ l.reason }}</td>
+                <td>{{ l.reference }}</td>
+                <td>{{ l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

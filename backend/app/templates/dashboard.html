@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="number">{{ kpis.total_products }}</div>
+        <div class="label">Total Products</div>
+    </div>
+    <div class="kpi-card low">
+        <div class="number">{{ kpis.low_stock }}</div>
+        <div class="label">Low Stock</div>
+    </div>
+    <div class="kpi-card out">
+        <div class="number">{{ kpis.out_of_stock }}</div>
+        <div class="label">Out of Stock</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ kpis.pending_receipts }}</div>
+        <div class="label">Pending Receipts</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ kpis.pending_deliveries }}</div>
+        <div class="label">Pending Deliveries</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ kpis.transfers_scheduled }}</div>
+        <div class="label">Transfers</div>
+    </div>
+</div>
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div class="nav-links">
+        <a href="{{ url_for('products.product_list') }}">Manage Products</a>
+        <a href="{{ url_for('operations.receipts') }}">New Receipt</a>
+        <a href="{{ url_for('operations.deliveries') }}">New Delivery</a>
+        <a href="{{ url_for('operations.transfers') }}">New Transfer</a>
+        <a href="{{ url_for('operations.adjustments') }}">Stock Adjustment</a>
+    </div>
+</div>
+{% endblock %}
